@@ -61,16 +61,19 @@ button,input{font:inherit;color:inherit}
   display:flex;justify-content:space-between;padding:0 7vw;font-family:Orbitron;font-size:12px;
   letter-spacing:.28em;color:rgba(234,242,255,.75);animation:hint 3.6s ease forwards}
 #hint .sep{color:var(--muted)}
+#hintMid{white-space:nowrap;letter-spacing:.2em}
 @keyframes hint{0%,70%{opacity:1}100%{opacity:0}}
+#grip{position:fixed;left:0;top:0;width:84px;height:84px;margin:-42px 0 0 -42px;border-radius:50%;
+  pointer-events:none;z-index:5;opacity:0;transform:translate3d(-200px,-200px,0);transition:opacity .25s ease;
+  background:radial-gradient(circle,rgba(210,236,255,.42) 0%,rgba(140,200,255,.14) 38%,rgba(140,200,255,0) 70%);
+  box-shadow:inset 0 0 0 1.5px rgba(210,236,255,.35),0 0 30px rgba(120,190,255,.25)}
+#grip.on{opacity:1}
 
 #pops{position:fixed;inset:0;pointer-events:none;z-index:5;overflow:hidden}
 .pop{position:absolute;transform:translate(-50%,-50%);font-family:Orbitron;font-weight:900;font-size:24px;
   text-shadow:0 0 14px currentColor,0 0 2px #fff;animation:pop .9s ease-out forwards}
 @keyframes pop{0%{opacity:0;transform:translate(-50%,-30%) scale(.5)}
   15%{opacity:1;transform:translate(-50%,-70%) scale(1.2)}100%{opacity:0;transform:translate(-50%,-190%) scale(1)}}
-.ripple{position:absolute;width:90px;height:90px;margin:-45px 0 0 -45px;border-radius:50%;
-  border:2px solid rgba(200,230,255,.55);animation:ripple .45s ease-out forwards}
-@keyframes ripple{from{transform:scale(.3);opacity:1}to{transform:scale(1.3);opacity:0}}
 
 /* ---------- Screens ---------- */
 .screen{position:fixed;inset:0;z-index:10;display:flex;align-items:center;justify-content:center;
@@ -170,6 +173,7 @@ input:focus{border-color:rgba(0,212,255,.6);box-shadow:0 0 0 4px rgba(0,212,255,
 <canvas id="c"></canvas>
 <div id="flash"></div>
 <div id="touch"></div>
+<div id="grip"></div>
 <div id="pops"></div>
 <div id="banner"></div>
 
@@ -183,7 +187,7 @@ input:focus{border-color:rgba(0,212,255,.6);box-shadow:0 0 0 4px rgba(0,212,255,
     </button>
   </div>
 </div>
-<div id="hint" class="hidden"><span id="hintL">&#9664; TAP LEFT</span><span class="sep">ROTATE</span><span id="hintR">TAP RIGHT &#9654;</span></div>
+<div id="hint" class="hidden"><span id="hintL"></span><span id="hintMid">&#8634; DRAG TO SPIN THE RING &#8635;</span><span id="hintR"></span></div>
 
 <section id="menu" class="screen menu hidden">
   <div class="menu-top">
@@ -195,7 +199,7 @@ input:focus{border-color:rgba(0,212,255,.6);box-shadow:0 0 0 4px rgba(0,212,255,
     <div class="best-chip">PERSONAL BEST <b id="menuBest">0</b></div>
     <button class="btn primary" id="btnPlay">PLAY</button>
     <button class="btn" id="btnBoard">LEADERBOARD</button>
-    <div class="controls" id="controlsText">Tap the left or right side of the screen to rotate the ring</div>
+    <div class="controls" id="controlsText">Drag around the ring to spin it. Quick flicks work too.</div>
   </div>
 </section>
 
@@ -946,6 +950,7 @@ function onMiss(b, seg) {
   addWave(p, RED, 0.2, 6, 1.0, 1);
   addWave(ORIGIN, RED, R, R * 2.6, 1.4, 0.6);
   segFlash[seg] = 1.4;
+  endDrag(null, 'abort');
   S.shake = 0.75;
   S.shock = 1;
   clearBalls(true);
@@ -971,6 +976,7 @@ function resolveBall(b) {
 function rotate(d) {
   if (S.state !== 'playing' || S.paused) return;
   S.rot += d;
+  if (drag.active) drag.angle += d * HALF_PI;
   sfx.turn();
   vibrate(6);
 }
@@ -1011,6 +1017,7 @@ function startGame() {
   Object.assign(S, { score: 0, hits: 0, combo: 0, maxCombo: 0, gameTime: 0, nextSpawn: 1.0, lastArrive: 0,
     timeScale: 1, paused: false, submitted: false, token: null, state: 'playing' });
   S.rot = Math.round(S.visRot / HALF_PI);
+  endDrag(null, 'abort');
   S.runId++;
   const run = S.runId;
   fetch('/api/session', { method: 'POST' })
@@ -1048,6 +1055,7 @@ function showOver() {
 
 function setPaused(p) {
   if (S.state !== 'playing') return;
+  if (p) endDrag(null, 'abort');
   S.paused = p;
   show(p ? 'paused' : null);
   $('touch').style.display = p ? 'none' : 'block';
@@ -1123,18 +1131,82 @@ async function openBoard(from) {
 function closeBoard() { show(boardReturn); }
 
 /* =========================================================
-   Input
+   Input: grab the ring and drag it around (touch or mouse).
+   Keyboard stays available on desktop.
    ========================================================= */
-$('touch').addEventListener('pointerdown', (e) => {
+const QUARTER_PX = 95;  // finger travel along the ring for one quarter turn
+const FLICK_QPS = 3;    // speed (quarter turns per second) that counts as a flick
+const drag = { active: false, id: null, angle: 0, lastX: 0, lastY: 0, hist: [] };
+const touchLayer = $('touch'), grip = $('grip');
+const _center = new THREE.Vector3();
+
+function ringCenterPx() {
+  _center.set(0, 0, 0).project(camera);
+  return { x: (_center.x * 0.5 + 0.5) * innerWidth, y: (-_center.y * 0.5 + 0.5) * innerHeight };
+}
+function moveGrip(x, y) { grip.style.transform = `translate3d(${x}px, ${y}px, 0)`; }
+function detent() { sfx.turn(); vibrate(7); }
+
+touchLayer.addEventListener('pointerdown', (e) => {
   e.preventDefault();
-  rotate(e.clientX < innerWidth / 2 ? 1 : -1);
-  const r = document.createElement('div');
-  r.className = 'ripple';
-  r.style.left = e.clientX + 'px';
-  r.style.top = e.clientY + 'px';
-  $('pops').appendChild(r);
-  setTimeout(() => r.remove(), 460);
+  if (S.state !== 'playing' || S.paused || drag.active) return;
+  Object.assign(drag, { active: true, id: e.pointerId, angle: S.rot * HALF_PI, lastX: e.clientX, lastY: e.clientY });
+  drag.hist = [{ t: e.timeStamp, a: drag.angle }];
+  try { touchLayer.setPointerCapture(e.pointerId); } catch {}
+  moveGrip(e.clientX, e.clientY);
+  grip.classList.add('on');
 });
+
+touchLayer.addEventListener('pointermove', (e) => {
+  if (!drag.active || e.pointerId !== drag.id) return;
+  e.preventDefault();
+  const c = ringCenterPx();
+  const rx = e.clientX - c.x, ry = e.clientY - c.y;
+  const r = Math.hypot(rx, ry);
+  const dx = e.clientX - drag.lastX, dy = e.clientY - drag.lastY;
+  // Only movement around the ring turns it. Screen y points down, so a positive value is clockwise.
+  const tangential = r > 16 ? (rx * dy - ry * dx) / r : 0;
+  const dAngle = (-tangential / QUARTER_PX) * HALF_PI;
+  drag.angle += dAngle;
+  drag.lastX = e.clientX; drag.lastY = e.clientY;
+  // Keep ~100 ms of samples (event timestamps, so main-thread lag can't skew the speed).
+  const h = drag.hist;
+  h.push({ t: e.timeStamp, a: drag.angle });
+  while (h.length > 2 && e.timeStamp - h[1].t > 100) h.shift();
+  moveGrip(e.clientX, e.clientY);
+  // Notched like a real dial: it clicks into the next quarter just past halfway.
+  const q = drag.angle / HALF_PI;
+  let stepped = false;
+  while (q > S.rot + 0.55) { S.rot++; stepped = true; }
+  while (q < S.rot - 0.55) { S.rot--; stepped = true; }
+  if (stepped) detent();
+});
+
+// mode: 'release' (finger lifted), 'cancel' (browser took over), 'abort' (game paused or ended)
+function endDrag(e, mode) {
+  if (!drag.active || (e && e.pointerId !== drag.id)) return;
+  drag.active = false;
+  try { touchLayer.releasePointerCapture(drag.id); } catch {}
+  drag.id = null;
+  grip.classList.remove('on');
+  if (mode === 'abort' || S.state !== 'playing') return;
+  const q = drag.angle / HALF_PI;
+  let target = Math.round(q);
+  // A quick flick turns a quarter in its direction even when it was short.
+  if (mode === 'release') {
+    const h = drag.hist, ref = h[0], last = h[h.length - 1];
+    const tUp = e ? e.timeStamp : performance.now();
+    const still = tUp - last.t > 80;  // finger stopped before lifting
+    const span = (tUp - ref.t) / 1000;
+    const vq = still || span <= 0 ? 0 : (drag.angle - ref.a) / HALF_PI / span;
+    if (Math.abs(vq) > FLICK_QPS) target = vq > 0 ? Math.ceil(q - 0.15) : Math.floor(q + 0.15);
+  }
+  if (target !== S.rot) { S.rot = target; detent(); }
+}
+touchLayer.addEventListener('pointerup', (e) => endDrag(e, 'release'));
+touchLayer.addEventListener('pointercancel', (e) => endDrag(e, 'cancel'));
+touchLayer.addEventListener('lostpointercapture', (e) => endDrag(e, 'cancel'));
+
 addEventListener('keydown', (e) => {
   if (e.target.tagName === 'INPUT') return;
   const k = e.key;
@@ -1164,8 +1236,10 @@ $('submitForm').addEventListener('submit', submitScore);
 
 if (!isTouch) {
   $('hintL').innerHTML = '&#9664; A / &larr;';
+  $('hintMid').textContent = 'DRAG OR USE KEYS';
+  $('hintMid').className = 'sep';
   $('hintR').innerHTML = 'D / &rarr; &#9654;';
-  $('controlsText').innerHTML = 'Rotate with <kbd>A</kbd><kbd>D</kbd> or <kbd>&larr;</kbd><kbd>&rarr;</kbd> &nbsp;·&nbsp; <kbd>SPACE</kbd> to play';
+  $('controlsText').innerHTML = 'Drag the ring with your mouse or use <kbd>A</kbd><kbd>D</kbd> / <kbd>&larr;</kbd><kbd>&rarr;</kbd> &nbsp;·&nbsp; <kbd>SPACE</kbd> to play';
 }
 
 /* =========================================================
@@ -1225,8 +1299,10 @@ function update(dt, t) {
   updateWaves(gdt);
   if (S.state === 'playing' && audio.drone) audio.drone.f.frequency.setTargetAtTime(Math.min(1500, 200 + S.hits * 9), audio.ctx.currentTime, 0.3);
 
-  // Ring rotation (critically damped)
-  S.visRot += (S.rot * HALF_PI - S.visRot) * (1 - Math.exp(-dt * 20));
+  // Ring rotation: follows the finger while dragging (pulled slightly into its notch), then settles.
+  let rotTarget = S.rot * HALF_PI;
+  if (drag.active) rotTarget = drag.angle + (rotTarget - drag.angle) * 0.25;
+  S.visRot += (rotTarget - S.visRot) * (1 - Math.exp(-dt * (drag.active ? 32 : 20)));
   ringGroup.rotation.z = S.visRot;
 
   // Ring lighting
