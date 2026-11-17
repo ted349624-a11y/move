@@ -12,6 +12,22 @@ Canlı: https://move-cyan.vercel.app
 - **Puan:** Gidilen her metre 1 puan. Bir engelin kıyısından sıyırırsan "near miss" +25, her enerji küresi +15. Küreler, bir sonraki engelin güvenli noktasına giden yolu gösterir.
 - **Hız ve bölgeler:** Hız sürekli artar. Her 600 metrede yeni bir bölgeye geçilir ve tünelin renkleri değişir (Cyan Drift, Magma Core, Toxic Grid, Ultraviolet).
 
+## Oyuna giriş: tek seferlik X görevleri
+
+İlk kez PLAY'e basan oyuncu, oyuna girmeden önce sırayla şu adımları tamamlar. Her biten görevin üstüne bir sonraki kart gelir:
+
+1. X kullanıcı adını yazar.
+2. Gönderiyi beğenir.
+3. Gönderiyi repostlar.
+4. Gönderiye yorum yazar. Yorumu oyuncu kendisi yazar, site hazır metin koymaz.
+5. @LayerRun'ı takip edip bildirimleri açar.
+
+Görevler o cihazda bir kez yapılır. Sayfa kapanırsa kaldığı adımdan devam edilir. Bittiğinde kullanıcı adı Upstash'te `ntr:xusers` anahtarına kaydedilir (Upstash konsolu > Data Browser), skor tablosundaki isim alanı da bu adla dolu gelir.
+
+Gönderi linki `index.html` içindeki `X_POST_ID` değerine yazılır (linkin sonundaki sayı). Boş olduğu sürece beğeni, repost ve yorum adımları @LayerRun profilini açar.
+
+Not: X, beğeni, repost ve yorumların bir web sitesi tarafından kontrol edilmesine ancak ücretli API'siyle izin verir. Bu yüzden adımlar güvene dayalıdır. Site doğru X sayfasını açar ve oyuncu "I'VE DONE IT" der. Kaydedilen kullanıcı adlarıyla elle kontrol yapılabilir.
+
 ## Proje yapısı
 
 ```
@@ -19,7 +35,9 @@ index.html          Oyunun tamamı (grafik, ses, arayüz)
 api/session.js      POST  - her oyun başında tek kullanımlık bir oturum anahtarı verir
 api/score.js        POST  - skoru doğrular ve kaydeder (oyuncu başına en iyi skor)
 api/leaderboard.js  GET   - ilk 25 oyuncuyu ve toplam oyuncu sayısını döndürür
+api/xtasks.js       POST  - X adımlarını bitiren oyuncunun kullanıcı adını kaydeder
 lib/redis.js        Upstash bağlantısı ve anahtar adları
+vendor/             Three.js (sitenin kendisinden sunulur, dış CDN'e bağlı değildir)
 ```
 
 Skor tablosu `ntr:` ile başlayan anahtarlarda tutulur. Eski Chroma Ring skorları veritabanında ayrı durur, yeni tabloya karışmaz.

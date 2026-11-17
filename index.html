@@ -16,6 +16,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="modulepreload" href="/vendor/three-r160.min.js">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@500;600;700;800&family=Inter:wght@400;500;600;700&family=Sora:wght@600&display=swap" rel="stylesheet">
@@ -164,6 +165,38 @@ input:focus{border-color:rgba(0,229,255,.7);box-shadow:0 0 0 4px rgba(0,229,255,
 .board-foot{padding:14px 8px 2px;font-size:13px;font-weight:500;color:var(--muted);text-align:center;letter-spacing:.04em}
 .empty{padding:40px 10px;text-align:center;color:var(--muted);font-size:15px}
 .paused-panel{display:flex;flex-direction:column;gap:14px}
+
+/* One-time X tasks: a deck where each new task lands on top of the finished one */
+.tasks-panel{padding:28px 22px 22px}
+.tasks-close{position:absolute;top:14px;right:14px}
+.tprog{height:4px;border-radius:4px;background:rgba(255,255,255,.1);margin:18px 0 10px;overflow:hidden}
+.tbar{height:100%;width:0;border-radius:4px;background:linear-gradient(90deg,var(--cyan),var(--magenta));box-shadow:0 0 12px rgba(0,229,255,.6);transition:width .5s ease}
+.tstep{font-size:11px;font-weight:600;letter-spacing:.3em;color:var(--muted)}
+.deck{display:grid;margin-top:18px;padding-bottom:42px}
+.card{grid-area:1/1;align-self:start;position:relative;padding:22px 20px 20px;border-radius:20px;text-align:center;
+  background:linear-gradient(180deg,#151b36,#0a0e20);border:1px solid rgba(255,255,255,.14);
+  box-shadow:0 18px 44px rgba(0,0,0,.55),inset 0 1px 0 rgba(255,255,255,.06);transform-origin:50% 100%;
+  transition:transform .55s cubic-bezier(.2,.8,.2,1),opacity .55s ease,filter .55s ease}
+.card.enter{transform:translateY(-40px) scale(1.05);opacity:0}
+.card.past{pointer-events:none;overflow:hidden}
+.card.past > *{visibility:hidden}
+.card-ico{width:52px;height:52px;margin:0 auto 12px;border-radius:16px;display:grid;place-items:center;
+  background:rgba(0,229,255,.1);border:1px solid rgba(0,229,255,.35);box-shadow:0 0 18px rgba(0,229,255,.2)}
+.card-ico svg,.card-check svg{width:24px;height:24px;fill:none;stroke:#bff6ff;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.card-title{font-family:var(--display);font-weight:600;font-size:16px;letter-spacing:.05em}
+.card-text{margin:8px 0 16px;font-size:14px;line-height:1.55;color:#b9c4dd}
+.card .btn + .btn{margin-top:10px}
+.card a.btn{display:block;text-decoration:none;text-align:center}
+.card-check{position:absolute;top:12px;right:12px;width:28px;height:28px;border-radius:50%;display:none;place-items:center;
+  background:linear-gradient(135deg,var(--cyan),var(--lime));box-shadow:0 0 14px rgba(61,255,138,.5)}
+.card-check svg{width:16px;height:16px;stroke:#04121a;stroke-width:3}
+.card.past .card-check{display:grid}
+.handle{display:flex;align-items:center;gap:4px;border:1px solid var(--line);border-radius:999px;background:rgba(0,0,0,.38);padding:0 20px;margin-bottom:12px;transition:border-color .2s,box-shadow .2s}
+.handle:focus-within{border-color:rgba(0,229,255,.7);box-shadow:0 0 0 4px rgba(0,229,255,.14)}
+.handle span{color:var(--muted);font-weight:600;font-size:17px}
+.handle input{border:none;background:transparent;padding:15px 0;text-align:left;box-shadow:none;border-radius:0}
+.handle input:focus{box-shadow:none}
+.card-err{min-height:18px;margin-top:8px;font-size:12px;color:#ff6b86}
 .paused-panel h2{margin-bottom:8px}
 
 #loading{position:fixed;inset:0;z-index:50;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;
@@ -175,6 +208,9 @@ input:focus{border-color:rgba(0,229,255,.7);box-shadow:0 0 0 4px rgba(0,229,255,
   animation:spin 1s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
 #loading p{max-width:320px;text-align:center;line-height:1.8;letter-spacing:.12em}
+#loading .retry{font-family:'Sora',var(--body);font-weight:600;font-size:13px;letter-spacing:.12em;color:#07090f;background:#fff;
+  border:none;border-radius:999px;padding:15px 34px;cursor:pointer;box-shadow:0 10px 40px rgba(160,200,255,.35)}
+#loading .err{max-width:300px;font-size:10px;letter-spacing:.04em;color:#5d6a88;text-align:center;word-break:break-word}
 </style>
 </head>
 <body>
@@ -224,6 +260,17 @@ input:focus{border-color:rgba(0,229,255,.7);box-shadow:0 0 0 4px rgba(0,229,255,
   </div>
 </section>
 
+<section id="tasks" class="screen hidden">
+  <div class="panel tasks-panel">
+    <button class="icon-btn tasks-close" id="btnTasksClose" aria-label="Close"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+    <div class="kicker">ONE-TIME ACCESS</div>
+    <h2>UNLOCK THE GAME</h2>
+    <div class="tprog"><div class="tbar" id="tasksBar"></div></div>
+    <div class="tstep" id="tasksStep"></div>
+    <div class="deck" id="deck"></div>
+  </div>
+</section>
+
 <section id="board" class="screen hidden">
   <div class="panel board-panel">
     <div class="board-head">
@@ -243,21 +290,29 @@ input:focus{border-color:rgba(0,229,255,.7);box-shadow:0 0 0 4px rgba(0,229,255,
   </div>
 </section>
 
-<div id="loading"><div class="spinner"></div><div>INITIALIZING</div></div>
-
-<script type="importmap">
-{ "imports": {
-  "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
-  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
-} }
+<div id="loading"><div class="spinner"></div><div id="loadingText">INITIALIZING</div></div>
+<script>
+// If the game has not started after a while, or fails to start, say so instead of spinning forever.
+(function () {
+  function fail(msg) {
+    var l = document.getElementById('loading');
+    if (!l || l.classList.contains('done') || window.__booted) return;
+    l.innerHTML = '<p>' + msg + '</p><button class="retry" type="button">TRY AGAIN</button><small class="err"></small>';
+    l.querySelector('.retry').addEventListener('click', function () { location.reload(); });
+    return l.querySelector('.err');
+  }
+  window.__bootFail = function (err) {
+    var e = fail('The game could not start on this device.');
+    if (e) e.textContent = String(err && err.message || err || '').slice(0, 160);
+  };
+  window.__bootTimer = setTimeout(function () { fail('Loading is taking longer than usual. Check your connection and try again.'); }, 15000);
+  window.addEventListener('error', function (ev) { if (!window.__booted) window.__bootFail(ev.message || 'Script error'); });
+})();
 </script>
+
 <script type="module">
-import * as THREE from 'three';
-import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
-import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
-import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
-import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
-import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
+import * as THREE from '/vendor/three-r160.min.js';
+import { EffectComposer, RenderPass, UnrealBloomPass, ShaderPass, OutputPass } from '/vendor/three-r160.min.js';
 
 /* =========================================================
    Utilities & constants
@@ -1092,7 +1147,7 @@ function updateHud() {
 /* =========================================================
    Screens & flow
    ========================================================= */
-const screens = ['menu', 'over', 'board', 'paused'];
+const screens = ['menu', 'over', 'board', 'paused', 'tasks'];
 function show(id) { screens.forEach((s) => $(s).classList.toggle('hidden', s !== id)); }
 let boardReturn = 'menu';
 
@@ -1154,7 +1209,7 @@ function showOver() {
   $('overDist').textContent = Math.floor(S.dist).toLocaleString('en-US');
   $('overNear').textContent = S.near;
   $('newBest').classList.toggle('hidden', !S.newBest || S.score === 0);
-  $('name').value = store.get('ntr_name') || store.get('cr_name') || '';
+  $('name').value = store.get('ntr_name') || XT.user || '';
   const btn = $('btnSubmit');
   btn.disabled = S.score < 1;
   btn.textContent = 'SUBMIT SCORE';
@@ -1237,6 +1292,153 @@ async function openBoard(from) {
 function closeBoard() { show(boardReturn); }
 
 /* =========================================================
+   One-time X tasks before the first run
+   ========================================================= */
+const X_HANDLE = 'LayerRun';
+// Paste the post's ID here (the number at the end of x.com/LayerRun/status/...).
+// Until it is set, the like, repost and reply steps open the @LayerRun profile.
+const X_POST_ID = '';
+const X_PROFILE_URL = `https://x.com/${X_HANDLE}`;
+const svg = (d) => `<svg viewBox="0 0 24 24" aria-hidden="true">${d}</svg>`;
+const ICONS = {
+  at: svg('<circle cx="12" cy="12" r="4"/><path d="M16 8v5a3 3 0 0 0 6 0v-1a10 10 0 1 0-4 8"/>'),
+  heart: svg('<path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1-1.1a5.5 5.5 0 0 0-7.8 7.8l1 1.1L12 21l7.8-7.5 1-1.1a5.5 5.5 0 0 0 0-7.8z"/>'),
+  repost: svg('<path d="M17 2l4 4-4 4"/><path d="M3 11V9a3 3 0 0 1 3-3h15"/><path d="M7 22l-4-4 4-4"/><path d="M21 13v2a3 3 0 0 1-3 3H3"/>'),
+  reply: svg('<path d="M21 11.5a8.4 8.4 0 0 1-9 8.4 8.6 8.6 0 0 1-3.8-.9L3 21l1.9-5.2A8.4 8.4 0 1 1 21 11.5z"/>'),
+  bell: svg('<path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/>'),
+  check: svg('<path d="M20 6L9 17l-5-5"/>'),
+  play: svg('<path d="M7 4l13 8-13 8z"/>'),
+};
+const TASKS = [
+  { id: 'user', icon: ICONS.at, title: 'Your X username', text: 'Enter the X account you will use for the next steps.' },
+  { id: 'like', icon: ICONS.heart, title: 'Like the post',
+    text: X_POST_ID ? 'Open the post on X and tap the heart.' : `Open @${X_HANDLE} on X and like the pinned post.`,
+    url: X_POST_ID ? `https://x.com/intent/like?tweet_id=${X_POST_ID}` : X_PROFILE_URL },
+  { id: 'repost', icon: ICONS.repost, title: 'Repost it',
+    text: 'Repost the same post so your followers see it.',
+    url: X_POST_ID ? `https://x.com/intent/retweet?tweet_id=${X_POST_ID}` : X_PROFILE_URL },
+  { id: 'reply', icon: ICONS.reply, title: 'Leave a reply',
+    text: 'Reply to the post. Write whatever you like, in your own words.',
+    url: X_POST_ID ? `https://x.com/intent/tweet?in_reply_to=${X_POST_ID}` : X_PROFILE_URL },
+  { id: 'notify', icon: ICONS.bell, title: 'Turn on notifications',
+    text: `Follow @${X_HANDLE}, then tap the bell on the profile so you never miss an update.`,
+    url: X_PROFILE_URL },
+];
+const XT_KEY = 'lr_xtasks';
+const XT = (() => { try { return JSON.parse(store.get(XT_KEY)) || {}; } catch { return {}; } })();
+XT.step = Math.min(Number(XT.step) || 0, TASKS.length);
+XT.user = typeof XT.user === 'string' ? XT.user : '';
+const xDone = () => XT.step >= TASKS.length;
+const saveXT = () => store.set(XT_KEY, JSON.stringify(XT));
+
+function cleanHandle(v) {
+  // accepts "name", "@name" or a pasted profile link; anything else is rejected, never trimmed down
+  return String(v || '').trim().replace(/^https?:\/\/(www\.)?(x|twitter)\.com\//i, '').replace(/^@/, '').replace(/[/?#].*$/, '');
+}
+function recordX() {
+  if (!xDone() || XT.recorded) return;
+  fetch('/api/xtasks', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ username: XT.user }) })
+    .then((r) => { if (r.ok) { XT.recorded = true; saveXT(); } })
+    .catch(() => {});
+}
+function addText(el, cls, text, tag = 'div') {
+  const n = document.createElement(tag);
+  n.className = cls;
+  n.textContent = text;
+  el.appendChild(n);
+  return n;
+}
+function buildCard(i) {
+  const card = document.createElement('div');
+  card.className = 'card';
+  card.innerHTML = `<div class="card-check">${ICONS.check}</div>`;
+  if (i >= TASKS.length) {
+    card.insertAdjacentHTML('beforeend', `<div class="card-ico">${ICONS.play}</div>`);
+    addText(card, 'card-title', "YOU'RE IN");
+    addText(card, 'card-text', `Thanks, @${XT.user}. The tunnel is open.`, 'p');
+    const go = addText(card, 'btn primary', 'PLAY NOW', 'button');
+    go.type = 'button';
+    go.addEventListener('click', () => { initAudio(); sfx.click(); startGame(); });
+    return card;
+  }
+  const t = TASKS[i];
+  card.insertAdjacentHTML('beforeend', `<div class="card-ico">${t.icon}</div>`);
+  addText(card, 'card-title', t.title);
+  addText(card, 'card-text', t.text, 'p');
+  if (t.id === 'user') {
+    const form = document.createElement('form');
+    form.autocomplete = 'off';
+    form.innerHTML = '<label class="handle"><span>@</span><input maxlength="40" placeholder="username" spellcheck="false" autocapitalize="off" aria-label="X username"></label><button class="btn primary" type="submit">CONTINUE</button>';
+    const input = form.querySelector('input');
+    input.value = XT.user;
+    const err = addText(card, 'card-err', '');
+    form.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const h = cleanHandle(input.value);
+      if (!/^[A-Za-z0-9_]{1,15}$/.test(h)) { err.textContent = 'Use your X handle: letters, numbers and _ (up to 15).'; return; }
+      XT.user = h;
+      input.blur();
+      completeStep();
+    });
+    card.insertBefore(form, err);
+  } else {
+    const open = addText(card, 'btn primary', 'OPEN ON X', 'a');
+    open.href = t.url;
+    open.target = '_blank';
+    open.rel = 'noopener noreferrer';
+    const done = addText(card, 'btn', "I'VE DONE IT", 'button');
+    done.type = 'button';
+    done.disabled = true;
+    open.addEventListener('click', () => { setTimeout(() => { done.disabled = false; }, 1500); });
+    done.addEventListener('click', () => { sfx.click(); completeStep(); });
+  }
+  return card;
+}
+function layoutDeck(animateTop) {
+  const cards = [...$('deck').children], top = cards.length - 1;
+  if (top >= 0) cards[top].style.height = '';
+  const h = top >= 0 ? cards[top].offsetHeight : 0;   // finished cards shrink to the top card's size, so only their edges show
+  cards.forEach((c, i) => {
+    const d = top - i;
+    c.style.height = d ? h + 'px' : '';
+    c.classList.toggle('past', d > 0);
+    c.style.zIndex = String(20 - d);
+    c.style.transform = d ? `translateY(${d * 13}px) scale(${1 - d * 0.05})` : '';
+    c.style.opacity = d > 3 ? '0' : '';
+    c.style.filter = d ? 'brightness(.5)' : '';
+  });
+  if (animateTop && cards[top]) {
+    const c = cards[top];
+    c.classList.add('enter');
+    requestAnimationFrame(() => requestAnimationFrame(() => c.classList.remove('enter')));
+  }
+  const n = Math.min(XT.step, TASKS.length);
+  $('tasksBar').style.width = (n / TASKS.length) * 100 + '%';
+  $('tasksStep').textContent = xDone() ? 'ALL STEPS DONE' : `STEP ${n + 1} OF ${TASKS.length}`;
+}
+function openTasks() {
+  const deck = $('deck');
+  deck.innerHTML = '';
+  for (let i = 0; i <= XT.step; i++) deck.appendChild(buildCard(i));
+  show('tasks');
+  layoutDeck(true);
+}
+function completeStep() {
+  XT.step = Math.min(XT.step + 1, TASKS.length);
+  saveXT();
+  $('deck').appendChild(buildCard(XT.step));
+  layoutDeck(true);
+  vibrate(12);
+  if (audio.ctx) sfx.pickup(XT.step + 2);
+  if (xDone()) recordX();
+}
+function requestPlay() {
+  if (xDone()) startGame();
+  else openTasks();
+}
+recordX();
+
+/* =========================================================
    Input: drag anywhere to steer (touch or mouse), keys on desktop
    ========================================================= */
 const drag = { active: false, id: null, lx: 0, ly: 0 };
@@ -1281,18 +1483,20 @@ addEventListener('keydown', (e) => {
   if (S.state === 'playing') {
     if (k === 'Escape' || k === 'p' || k === 'P') setPaused(!S.paused);
     else if (S.paused && (k === ' ' || k === 'Enter')) setPaused(false);
-  } else if ((k === ' ' || k === 'Enter') && (S.state === 'menu' || S.state === 'over') && $('board').classList.contains('hidden')) {
+  } else if ((k === ' ' || k === 'Enter') && (S.state === 'menu' || S.state === 'over') && $('board').classList.contains('hidden') && $('tasks').classList.contains('hidden')) {
     e.preventDefault();
-    startGame();
+    requestPlay();
   } else if (k === 'Escape' && !$('board').classList.contains('hidden')) closeBoard();
+  else if (k === 'Escape' && !$('tasks').classList.contains('hidden')) show('menu');
 });
 addEventListener('keyup', (e) => { if (KEYMAP[e.key]) keys[KEYMAP[e.key]] = false; });
 addEventListener('blur', () => { keys.left = keys.right = keys.up = keys.down = false; });
 document.addEventListener('visibilitychange', () => { if (document.hidden) setPaused(true); });
 
 const click = (id, fn) => $(id).addEventListener('click', (e) => { initAudio(); sfx.click(); fn(e); });
-click('btnPlay', startGame);
-click('btnAgain', startGame);
+click('btnPlay', requestPlay);
+click('btnAgain', requestPlay);
+click('btnTasksClose', () => show('menu'));
 click('btnBoard', () => openBoard('menu'));
 click('btnBoard2', () => openBoard('over'));
 click('btnCloseBoard', closeBoard);
@@ -1469,11 +1673,18 @@ function frame() {
   composer.render();
 }
 
-goMenu();
-frame();
-const reveal = () => $('loading').classList.add('done');
-(document.fonts && document.fonts.ready ? document.fonts.ready : Promise.resolve()).then(() => setTimeout(reveal, 300));
-setTimeout(reveal, 2500);
+try {
+  goMenu();
+  frame();
+  window.__booted = true;
+  clearTimeout(window.__bootTimer);
+  const reveal = () => $('loading').classList.add('done');
+  (document.fonts && document.fonts.ready ? document.fonts.ready : Promise.resolve()).then(() => setTimeout(reveal, 300));
+  setTimeout(reveal, 2500);
+} catch (err) {
+  console.error(err);
+  if (window.__bootFail) window.__bootFail(err);
+}
 </script>
 </body>
 </html>
