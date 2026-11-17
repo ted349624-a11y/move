@@ -4,8 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="theme-color" content="#010207">
-<meta name="description" content="Neon Tunnel Runner - steer the glowing core through an endless neon tunnel, dodge every barrier and climb the global leaderboard.">
-<title>Neon Tunnel Runner</title>
+<meta name="description" content="Layer Run - steer the glowing core through an endless neon tunnel, dodge every barrier and climb the global leaderboard.">
+<title>Layer Run</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@200;300;400;500;600&display=swap" rel="stylesheet">
@@ -87,19 +87,12 @@ h2{font-weight:300;font-size:24px;letter-spacing:.2em}
 
 .menu{flex-direction:column;justify-content:space-between;text-align:center;background:
   linear-gradient(180deg,rgba(1,2,7,.6) 0%,rgba(1,2,7,0) 30%,rgba(1,2,7,0) 60%,rgba(1,2,7,.8) 100%)}
-.logo{font-weight:200;font-size:clamp(34px,min(10vw,8vh),84px);letter-spacing:.14em;line-height:1.05;
+.logo{font-weight:200;font-size:clamp(40px,min(12vw,9vh),104px);letter-spacing:.16em;line-height:1.05;white-space:nowrap;padding-top:4vh;
   background:linear-gradient(90deg,var(--cyan),var(--violet) 50%,var(--magenta));
   -webkit-background-clip:text;background-clip:text;color:transparent;
   filter:drop-shadow(0 0 22px rgba(0,229,255,.35)) drop-shadow(0 0 40px rgba(255,43,214,.22))}
-@media (min-aspect-ratio: 1/1){.logo{font-size:clamp(32px,7vh,68px)}.logo br{display:none}}
 .nw{white-space:nowrap}
-.tag{margin-top:14px;font-size:17px;font-weight:300;letter-spacing:.06em;color:rgba(234,242,255,.8)}
 .menu-bottom{width:min(380px,100%);display:flex;flex-direction:column;gap:12px}
-.best-chip{align-self:center;font-size:11px;letter-spacing:.3em;color:var(--muted);
-  padding:8px 16px;border:1px solid var(--line);border-radius:999px;background:rgba(10,14,30,.45);backdrop-filter:blur(10px)}
-.best-chip b{color:#fff;margin-left:6px}
-.controls{font-size:14px;letter-spacing:.06em;color:var(--muted);margin-top:4px;line-height:1.7}
-.controls kbd{font-family:inherit;font-size:10px;padding:3px 7px;border:1px solid var(--line);border-radius:6px;color:#dfe9ff;margin:0 2px}
 
 .btn{font-weight:500;letter-spacing:.26em;font-size:14px;color:#fff;padding:17px 24px;
   border-radius:15px;border:1px solid rgba(255,255,255,.16);cursor:pointer;width:100%;
@@ -188,15 +181,11 @@ input:focus{border-color:rgba(0,229,255,.6);box-shadow:0 0 0 4px rgba(0,229,255,
 
 <section id="menu" class="screen menu hidden">
   <div class="menu-top">
-    <div class="kicker">AN ENDLESS NEON RUNNER</div>
-    <h1 class="logo">NEON TUNNEL <br>RUNNER</h1>
-    <p class="tag">Steer the core through the tunnel. Dodge everything.</p>
+    <h1 class="logo">LAYER RUN</h1>
   </div>
   <div class="menu-bottom">
-    <div class="best-chip">PERSONAL BEST <b id="menuBest">0</b></div>
     <button class="btn primary" id="btnPlay">PLAY</button>
     <button class="btn" id="btnBoard">LEADERBOARD</button>
-    <div class="controls" id="controlsText">Drag anywhere to steer the core.</div>
   </div>
 </section>
 
@@ -1102,7 +1091,6 @@ function goMenu() {
   $('hud').classList.add('hidden');
   $('hint').classList.add('hidden');
   $('touch').style.display = 'none';
-  $('menuBest').textContent = S.best.toLocaleString('en-US');
   engineStop();
   resetPalette();
   show('menu');
@@ -1298,7 +1286,6 @@ $('submitForm').addEventListener('submit', submitScore);
 
 if (!isTouch) {
   $('hint').textContent = 'ARROWS / WASD  ·  OR DRAG WITH THE MOUSE';
-  $('controlsText').innerHTML = 'Steer with <kbd>&larr;</kbd><kbd>&uarr;</kbd><kbd>&darr;</kbd><kbd>&rarr;</kbd> or <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd>, or drag with the mouse &nbsp;·&nbsp; <kbd>SPACE</kbd> to play';
 }
 
 /* =========================================================
