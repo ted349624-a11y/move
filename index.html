@@ -1303,12 +1303,16 @@ const ICONS = {
   heart: svg('<path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1-1.1a5.5 5.5 0 0 0-7.8 7.8l1 1.1L12 21l7.8-7.5 1-1.1a5.5 5.5 0 0 0 0-7.8z"/>'),
   repost: svg('<path d="M17 2l4 4-4 4"/><path d="M3 11V9a3 3 0 0 1 3-3h15"/><path d="M7 22l-4-4 4-4"/><path d="M21 13v2a3 3 0 0 1-3 3H3"/>'),
   reply: svg('<path d="M21 11.5a8.4 8.4 0 0 1-9 8.4 8.6 8.6 0 0 1-3.8-.9L3 21l1.9-5.2A8.4 8.4 0 1 1 21 11.5z"/>'),
+  follow: svg('<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M19 8v6M22 11h-6"/>'),
   bell: svg('<path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/>'),
   check: svg('<path d="M20 6L9 17l-5-5"/>'),
   play: svg('<path d="M7 4l13 8-13 8z"/>'),
 };
 const TASKS = [
   { id: 'user', icon: ICONS.at, title: 'Your X username', text: 'Enter the X account you will use for the next steps.' },
+  { id: 'follow', icon: ICONS.follow, title: `Follow @${X_HANDLE}`,
+    text: `Follow @${X_HANDLE} on X to keep up with the game.`,
+    url: isTouch ? X_PROFILE_URL : `https://x.com/intent/follow?screen_name=${X_HANDLE}` },
   { id: 'like', icon: ICONS.heart, title: 'Like the post',
     text: 'Open the post on X and tap the heart.',
     url: postLink(`like?tweet_id=${X_POST_ID}`) },
@@ -1319,14 +1323,23 @@ const TASKS = [
     text: isTouch ? 'Open the post, tap reply and write whatever you like, in your own words.' : 'Reply to the post. Write whatever you like, in your own words.',
     url: postLink(`tweet?in_reply_to=${X_POST_ID}`) },
   { id: 'notify', icon: ICONS.bell, title: 'Turn on notifications',
-    text: `Follow @${X_HANDLE}, then tap the bell on the profile so you never miss an update.`,
+    text: `Open the @${X_HANDLE} profile and tap the bell so you never miss an update.`,
     url: X_PROFILE_URL },
 ];
 const XT_KEY = 'lr_xtasks';
 const XT = (() => { try { return JSON.parse(store.get(XT_KEY)) || {}; } catch { return {}; } })();
-XT.step = Math.min(Number(XT.step) || 0, TASKS.length);
 XT.user = typeof XT.user === 'string' ? XT.user : '';
-const xDone = () => XT.step >= TASKS.length;
+if (!Array.isArray(XT.done)) {
+  // Older saves stored a step count in the original order (no separate follow step);
+  // finishing the old notifications step already included following.
+  const OLD = ['user', 'like', 'repost', 'reply', 'notify'];
+  XT.done = OLD.slice(0, Math.min(Number(XT.step) || 0, OLD.length));
+  if (XT.done.includes('notify')) XT.done.push('follow');
+  delete XT.step;
+}
+XT.done = XT.done.filter((id, i, a) => TASKS.some((t) => t.id === id) && a.indexOf(id) === i);
+const pendingIndex = () => TASKS.findIndex((t) => !XT.done.includes(t.id));
+const xDone = () => pendingIndex() === -1;
 const saveXT = () => store.set(XT_KEY, JSON.stringify(XT));
 
 function cleanHandle(v) {
@@ -1410,24 +1423,27 @@ function layoutDeck(animateTop) {
     c.classList.add('enter');
     requestAnimationFrame(() => requestAnimationFrame(() => c.classList.remove('enter')));
   }
-  const n = Math.min(XT.step, TASKS.length);
+  const n = XT.done.length;
   $('tasksBar').style.width = (n / TASKS.length) * 100 + '%';
   $('tasksStep').textContent = xDone() ? 'ALL STEPS DONE' : `STEP ${n + 1} OF ${TASKS.length}`;
 }
 function openTasks() {
   const deck = $('deck');
   deck.innerHTML = '';
-  for (let i = 0; i <= XT.step; i++) deck.appendChild(buildCard(i));
+  TASKS.forEach((t, i) => { if (XT.done.includes(t.id)) deck.appendChild(buildCard(i)); });
+  deck.appendChild(buildCard(xDone() ? TASKS.length : pendingIndex()));
   show('tasks');
   layoutDeck(true);
 }
 function completeStep() {
-  XT.step = Math.min(XT.step + 1, TASKS.length);
+  const cur = pendingIndex();
+  if (cur < 0) return;
+  XT.done.push(TASKS[cur].id);
   saveXT();
-  $('deck').appendChild(buildCard(XT.step));
+  $('deck').appendChild(buildCard(xDone() ? TASKS.length : pendingIndex()));
   layoutDeck(true);
   vibrate(12);
-  if (audio.ctx) sfx.pickup(XT.step + 2);
+  if (audio.ctx) sfx.pickup(XT.done.length + 2);
   if (xDone()) recordX();
 }
 function requestPlay() {

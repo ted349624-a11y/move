@@ -17,10 +17,11 @@ Canlı: https://move-cyan.vercel.app
 İlk kez PLAY'e basan oyuncu, oyuna girmeden önce sırayla şu adımları tamamlar. Her biten görevin üstüne bir sonraki kart gelir:
 
 1. X kullanıcı adını yazar.
-2. Gönderiyi beğenir.
-3. Gönderiyi repostlar.
-4. Gönderiye yorum yazar. Yorumu oyuncu kendisi yazar, site hazır metin koymaz.
-5. @LayerRun'ı takip edip bildirimleri açar.
+2. @LayerRun'ı takip eder.
+3. Gönderiyi beğenir.
+4. Gönderiyi repostlar.
+5. Gönderiye yorum yazar. Yorumu oyuncu kendisi yazar, site hazır metin koymaz.
+6. @LayerRun profilinde bildirimleri açar.
 
 Görevler o cihazda bir kez yapılır. Sayfa kapanırsa kaldığı adımdan devam edilir. Bittiğinde kullanıcı adı Upstash'te `ntr:xusers` anahtarına kaydedilir (Upstash konsolu > Data Browser), skor tablosundaki isim alanı da bu adla dolu gelir.
 
