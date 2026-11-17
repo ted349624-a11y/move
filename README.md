@@ -48,5 +48,5 @@ Tarayıcıda çalışan hiçbir oyun tamamen hileye kapalı değildir, ama bu ö
 ## Notlar
 
 - Skor tablosu isim bazlıdır: aynı ismi kullanan iki kişi tek satırı paylaşır ve sadece en yüksek skor tutulur.
-- Kontroller: ekranın sol/sağ yarısına dokun ya da `A`/`D`, `←`/`→`. `P` veya `Esc` duraklatır.
+- Kontroller: halkayı parmağınla tutup etrafında sürükleyerek çevir. Halka her çeyrek turda bir "tık" yapıp yerine oturur; hızlı kısa bir fiske de bir çeyrek döndürür. Bilgisayarda fareyle sürükleyebilir ya da `A`/`D`, `←`/`→` kullanabilirsin. `P` veya `Esc` duraklatır.
 - Zorluk: her isabetle toplar hızlanır, her 10'lu komboda çarpan artar (en fazla x5).
