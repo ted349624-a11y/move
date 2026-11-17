@@ -70,11 +70,6 @@ button,input{font:inherit;color:inherit}
   text-align:center;font-size:11px;font-weight:600;letter-spacing:.26em;color:rgba(234,242,255,.85);white-space:nowrap;
   animation:hint 4s ease forwards}
 @keyframes hint{0%,70%{opacity:1}100%{opacity:0}}
-#grip{position:fixed;left:0;top:0;width:84px;height:84px;margin:-42px 0 0 -42px;border-radius:50%;
-  pointer-events:none;z-index:5;opacity:0;transform:translate3d(-200px,-200px,0);transition:opacity .25s ease;
-  background:radial-gradient(circle,rgba(210,236,255,.42) 0%,rgba(140,200,255,.14) 38%,rgba(140,200,255,0) 70%);
-  box-shadow:inset 0 0 0 1.5px rgba(210,236,255,.35),0 0 30px rgba(120,190,255,.25)}
-#grip.on{opacity:1}
 
 #pops{position:fixed;inset:0;pointer-events:none;z-index:5;overflow:hidden}
 .pop{position:absolute;transform:translate(-50%,-50%);font-family:var(--display);font-weight:600;font-size:16px;letter-spacing:.08em;white-space:nowrap;
@@ -217,7 +212,6 @@ input:focus{border-color:rgba(0,229,255,.7);box-shadow:0 0 0 4px rgba(0,229,255,
 <canvas id="c"></canvas>
 <div id="flash"></div>
 <div id="touch"></div>
-<div id="grip"></div>
 <div id="pops"></div>
 <div id="banner"></div>
 
@@ -1443,17 +1437,14 @@ recordX();
    Input: drag anywhere to steer (touch or mouse), keys on desktop
    ========================================================= */
 const drag = { active: false, id: null, lx: 0, ly: 0 };
-const touchLayer = $('touch'), grip = $('grip');
+const touchLayer = $('touch');
 const dragSens = () => 10.5 / (0.62 * Math.min(innerWidth, innerHeight));
-function moveGrip(x, y) { grip.style.transform = `translate3d(${x}px, ${y}px, 0)`; }
 
 touchLayer.addEventListener('pointerdown', (e) => {
   e.preventDefault();
   if (S.state !== 'playing' || S.paused || drag.active) return;
   Object.assign(drag, { active: true, id: e.pointerId, lx: e.clientX, ly: e.clientY });
   try { touchLayer.setPointerCapture(e.pointerId); } catch {}
-  moveGrip(e.clientX, e.clientY);
-  grip.classList.add('on');
 });
 touchLayer.addEventListener('pointermove', (e) => {
   if (!drag.active || e.pointerId !== drag.id) return;
@@ -1463,14 +1454,12 @@ touchLayer.addEventListener('pointermove', (e) => {
   ctrl.ty -= (e.clientY - drag.ly) * k;
   clampTarget();
   drag.lx = e.clientX; drag.ly = e.clientY;
-  moveGrip(e.clientX, e.clientY);
 });
 function endDrag(e) {
   if (!drag.active || (e && e.pointerId !== drag.id)) return;
   drag.active = false;
   try { touchLayer.releasePointerCapture(drag.id); } catch {}
   drag.id = null;
-  grip.classList.remove('on');
 }
 touchLayer.addEventListener('pointerup', endDrag);
 touchLayer.addEventListener('pointercancel', endDrag);
