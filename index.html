@@ -344,6 +344,7 @@ const ZONES = [
 ];
 const WHITE = new THREE.Color(1, 1, 1);
 const CORE_COL = new THREE.Color(0.75, 0.88, 1);
+const TRAIL_COL = new THREE.Color(0.6, 0.68, 0.78);
 const FOG_COL = new THREE.Color(0x010207);
 
 /* =========================================================
@@ -451,7 +452,7 @@ void main(){
   col += uColB * strip * (0.1 + 0.6 * dash) * nearFade;
   // the core lights the wall when it flies close
   float dl = distance(vW, uPlayer);
-  col += vec3(0.55, 0.75, 1.0) * 1.4 / (1.0 + dl * dl * 1.0) * (0.35 + 0.65 * seam);
+  col += vec3(0.55, 0.75, 1.0) * 1.05 / (1.0 + dl * dl * 1.0) * (0.35 + 0.65 * seam);
   // faint gloss at grazing angles
   vec3 V = normalize(uCam - vW);
   vec3 N = normalize(vec3(-vW.xy, 0.0));
@@ -517,7 +518,7 @@ function updateStreaks(dt, speed, colA) {
 /* =========================================================
    The player: the glowing core from the logo
    ========================================================= */
-const chromeMat = new THREE.MeshPhysicalMaterial({ color: 0xb8c2d4, metalness: 1, roughness: 0.2, clearcoat: 0.5, clearcoatRoughness: 0.1, envMapIntensity: 1.0 });
+const chromeMat = new THREE.MeshPhysicalMaterial({ color: 0xb8c2d4, metalness: 1, roughness: 0.2, clearcoat: 0.5, clearcoatRoughness: 0.1, envMapIntensity: 0.6 });
 const player = new THREE.Group();
 scene.add(player);
 const core = new THREE.Group();
@@ -527,19 +528,19 @@ const coreOrbMat = new THREE.MeshBasicMaterial({ color: CORE_COL.clone().multipl
 core.add(new THREE.Mesh(new THREE.SphereGeometry(0.42, 32, 24), coreOrbMat));
 const shell = new THREE.Mesh(
   new THREE.SphereGeometry(0.88, 64, 48),
-  new THREE.MeshPhysicalMaterial({ color: 0x9fb8ff, metalness: 0, roughness: 0.04, clearcoat: 1, transparent: true, opacity: 0.22, envMapIntensity: 1.4, depthWrite: false })
+  new THREE.MeshPhysicalMaterial({ color: 0x9fb8ff, metalness: 0, roughness: 0.04, clearcoat: 1, transparent: true, opacity: 0.16, envMapIntensity: 0.8, depthWrite: false })
 );
 shell.renderOrder = 2;
 core.add(shell);
 const coreRingMat = chromeMat.clone();
 coreRingMat.color.set(0x7a8394);
-coreRingMat.envMapIntensity = 0.7;
+coreRingMat.envMapIntensity = 0.35;
 const coreRing = new THREE.Mesh(new THREE.TorusGeometry(1.12, 0.08, 20, 96), coreRingMat);
 core.add(coreRing);
 const gyroA = new THREE.Mesh(new THREE.TorusGeometry(1.42, 0.022, 10, 160), chromeMat);
 const gyroB = new THREE.Mesh(new THREE.TorusGeometry(1.58, 0.018, 10, 160), chromeMat);
 core.add(gyroA, gyroB);
-const coreGlowMat = new THREE.SpriteMaterial({ map: glowTex, color: CORE_COL.clone(), transparent: true, opacity: 0.38, blending: THREE.AdditiveBlending, depthWrite: false, fog: false });
+const coreGlowMat = new THREE.SpriteMaterial({ map: glowTex, color: CORE_COL.clone(), transparent: true, opacity: 0.22, blending: THREE.AdditiveBlending, depthWrite: false, fog: false });
 const coreGlow = new THREE.Sprite(coreGlowMat);
 coreGlow.scale.setScalar(2.8);
 core.add(coreGlow);
@@ -1603,7 +1604,7 @@ function update(dt, t) {
     for (let n = 0; n < 2; n++) {
       emit(P.x + (rand() - 0.5) * 0.25, P.y + (rand() - 0.5) * 0.25, 0.2,
         (rand() - 0.5) * 0.8, (rand() - 0.5) * 0.8, S.speed * 0.85 + rand() * 3,
-        rand() < 0.5 ? WHITE : S.colA, 0.32 + rand() * 0.22, 0.32 + rand() * 0.2, 1.5);
+        rand() < 0.5 ? TRAIL_COL : S.colA, 0.28 + rand() * 0.18, 0.3 + rand() * 0.18, 1.5);
     }
   }
   updateParticles(gdt);
@@ -1629,9 +1630,9 @@ function update(dt, t) {
   gyroB.rotation.y -= dt * 1.9; gyroB.rotation.z += dt * 0.7; gyroB.rotation.x = 1.1;
   coreRing.rotation.x = Math.sin(t * 1.3) * 0.25;
   const beat = 0.5 + 0.5 * Math.sin(t * 6);
-  coreOrbMat.color.copy(CORE_COL).multiplyScalar(1.5 + beat * 0.3);
-  coreGlow.scale.setScalar(2.7 + beat * 0.25);
-  playerLight.intensity = 26 + beat * 6;
+  coreOrbMat.color.copy(CORE_COL).multiplyScalar(0.92 + beat * 0.14);
+  coreGlow.scale.setScalar(2.3 + beat * 0.2);
+  playerLight.intensity = 15 + beat * 3;
 
   // Tunnel
   S.pulse *= Math.exp(-dt * 2.5);
