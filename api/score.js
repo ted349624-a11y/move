@@ -2,10 +2,10 @@ import { redis, KEYS, noDb } from '../lib/redis.js';
 
 const NAME_RE = /^[A-Za-z0-9 _.\-]{2,16}$/;
 const TOKEN_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
-// Best case is ~2.2 orbs per second at a x5 multiplier, so anything above
-// this rate cannot come from real play.
-const MAX_POINTS_PER_SEC = 12;
-const GRACE_POINTS = 20;
+// Score = metres travelled (top speed ~62 m/s) + near-miss and pickup bonuses.
+// Even a perfect run stays well under this rate, so anything above it is not real play.
+const MAX_POINTS_PER_SEC = 200;
+const GRACE_POINTS = 500;
 
 export default async function handler(req, res) {
   res.setHeader('Cache-Control', 'no-store');
@@ -29,7 +29,7 @@ export default async function handler(req, res) {
   if (!NAME_RE.test(name)) {
     return res.status(400).json({ error: 'Name must be 2-16 characters: letters, numbers, spaces, _ - .' });
   }
-  if (!Number.isInteger(score) || score < 1 || score > 1_000_000) {
+  if (!Number.isInteger(score) || score < 1 || score > 10_000_000) {
     return res.status(400).json({ error: 'Invalid score.' });
   }
   if (typeof token !== 'string' || !TOKEN_RE.test(token)) {

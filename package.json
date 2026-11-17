@@ -1,9 +1,9 @@
 {
-  "name": "chroma-ring",
-  "version": "1.0.0",
+  "name": "neon-tunnel-runner",
+  "version": "2.0.0",
   "private": true,
   "type": "module",
-  "description": "Chroma Ring - an endless 3D rhythm game with a global leaderboard (Vercel + Upstash Redis).",
+  "description": "Neon Tunnel Runner - an endless 3D tunnel runner with a global leaderboard (Vercel + Upstash Redis).",
   "scripts": {
     "dev": "vercel dev"
   },
