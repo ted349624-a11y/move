@@ -1290,10 +1290,13 @@ function closeBoard() { show(boardReturn); }
    One-time X tasks before the first run
    ========================================================= */
 const X_HANDLE = 'LayerRun';
-// Paste the post's ID here (the number at the end of x.com/LayerRun/status/...).
-// Until it is set, the like, repost and reply steps open the @LayerRun profile.
-const X_POST_ID = '';
+// The post for the like, repost and reply steps (the number at the end of x.com/LayerRun/status/...).
+const X_POST_ID = '2122839010355929157';
 const X_PROFILE_URL = `https://x.com/${X_HANDLE}`;
+const X_POST_URL = `https://x.com/${X_HANDLE}/status/${X_POST_ID}`;
+// Phones open x.com links in the X app, where the person is signed in, so they get the post itself.
+// On desktop, X's one-tap pages (like, repost, an empty reply box) work in the browser.
+const postLink = (intent) => (isTouch ? X_POST_URL : `https://x.com/intent/${intent}`);
 const svg = (d) => `<svg viewBox="0 0 24 24" aria-hidden="true">${d}</svg>`;
 const ICONS = {
   at: svg('<circle cx="12" cy="12" r="4"/><path d="M16 8v5a3 3 0 0 0 6 0v-1a10 10 0 1 0-4 8"/>'),
@@ -1307,14 +1310,14 @@ const ICONS = {
 const TASKS = [
   { id: 'user', icon: ICONS.at, title: 'Your X username', text: 'Enter the X account you will use for the next steps.' },
   { id: 'like', icon: ICONS.heart, title: 'Like the post',
-    text: X_POST_ID ? 'Open the post on X and tap the heart.' : `Open @${X_HANDLE} on X and like the pinned post.`,
-    url: X_POST_ID ? `https://x.com/intent/like?tweet_id=${X_POST_ID}` : X_PROFILE_URL },
+    text: 'Open the post on X and tap the heart.',
+    url: postLink(`like?tweet_id=${X_POST_ID}`) },
   { id: 'repost', icon: ICONS.repost, title: 'Repost it',
     text: 'Repost the same post so your followers see it.',
-    url: X_POST_ID ? `https://x.com/intent/retweet?tweet_id=${X_POST_ID}` : X_PROFILE_URL },
+    url: postLink(`retweet?tweet_id=${X_POST_ID}`) },
   { id: 'reply', icon: ICONS.reply, title: 'Leave a reply',
-    text: 'Reply to the post. Write whatever you like, in your own words.',
-    url: X_POST_ID ? `https://x.com/intent/tweet?in_reply_to=${X_POST_ID}` : X_PROFILE_URL },
+    text: isTouch ? 'Open the post, tap reply and write whatever you like, in your own words.' : 'Reply to the post. Write whatever you like, in your own words.',
+    url: postLink(`tweet?in_reply_to=${X_POST_ID}`) },
   { id: 'notify', icon: ICONS.bell, title: 'Turn on notifications',
     text: `Follow @${X_HANDLE}, then tap the bell on the profile so you never miss an update.`,
     url: X_PROFILE_URL },
