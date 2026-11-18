@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#010207">
+<title>Layer Run · Admin</title>
+<link rel="icon" href="/favicon.ico" sizes="48x48">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--cyan:#00e5ff;--magenta:#ff2bd6;--red:#ff4d6d;--amber:#ffb020;--lime:#3dff8a;
+  --bg:#010207;--card:#0b1022;--line:rgba(255,255,255,.1);--text:#eaf2ff;--muted:#93a1c4}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{background:var(--bg);color:var(--text);font-family:'Inter',system-ui,sans-serif;-webkit-tap-highlight-color:transparent}
+body{min-height:100vh;background:radial-gradient(900px 500px at 50% -10%,rgba(122,92,255,.18),transparent 70%),var(--bg)}
+button,input{font:inherit;color:inherit}
+.hidden{display:none!important}
+.wrap{max-width:760px;margin:0 auto;padding:max(20px,env(safe-area-inset-top)) 16px calc(160px + env(safe-area-inset-bottom))}
+.top{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px}
+.kicker{font-size:11px;font-weight:600;letter-spacing:.36em;color:var(--muted)}
+h1{font-family:'Unbounded',sans-serif;font-weight:700;font-size:24px;letter-spacing:.06em;margin-top:4px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:20px;padding:22px}
+label{display:block;font-size:13px;font-weight:600;color:var(--muted);margin-bottom:8px}
+input{width:100%;padding:14px 16px;border-radius:12px;border:1px solid var(--line);background:rgba(0,0,0,.35);outline:none;font-size:16px}
+input:focus{border-color:rgba(0,229,255,.6);box-shadow:0 0 0 3px rgba(0,229,255,.14)}
+.btn{border:none;border-radius:999px;padding:12px 18px;font-weight:600;font-size:14px;cursor:pointer;white-space:nowrap}
+.primary{background:#fff;color:#07090f;width:100%;margin-top:14px;padding:14px}
+.ghost{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.18)}
+.ghost:hover{background:rgba(255,255,255,.12)}
+.danger{background:var(--red);color:#fff}
+.err{min-height:20px;margin-top:10px;font-size:14px;color:var(--red)}
+.stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-bottom:14px}
+.stat{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px}
+.stat b{display:block;font-family:'Unbounded',sans-serif;font-weight:600;font-size:20px}
+.stat small{font-size:12px;color:var(--muted)}
+.tools{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:10px}
+.tools input{flex:1 1 220px}
+.chips{display:flex;gap:6px}
+.chip{background:transparent;border:1px solid var(--line);color:var(--muted);border-radius:999px;padding:10px 14px;font-weight:600;font-size:13px;cursor:pointer}
+.chip.on{background:rgba(0,229,255,.12);border-color:rgba(0,229,255,.5);color:#dff9ff}
+.actions{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px}
+.legend{font-size:12px;line-height:1.6;color:var(--muted);margin:4px 2px 14px}
+.legend span{font-weight:700}
+.list{display:flex;flex-direction:column;gap:6px}
+.row{display:grid;grid-template-columns:28px 44px minmax(0,1fr) auto auto;align-items:center;gap:10px;padding:10px 12px;
+  background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);border-radius:14px}
+.row.flagged{border-color:rgba(255,77,109,.35);background:rgba(255,77,109,.06)}
+.row.sel{box-shadow:inset 0 0 0 1px rgba(0,229,255,.6)}
+.row input[type=checkbox]{width:20px;height:20px;accent-color:var(--cyan)}
+.rk{font-family:'Unbounded',sans-serif;font-weight:600;font-size:12px;color:var(--muted);text-align:center}
+.nm{min-width:0}
+.nm .n{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:600}
+.badge{display:inline-block;margin:4px 4px 0 0;padding:2px 7px;border-radius:6px;font-size:10px;font-weight:700;letter-spacing:.08em}
+.badge.round{background:rgba(255,176,32,.16);color:var(--amber)}
+.badge.high{background:rgba(255,77,109,.18);color:#ff8aa0}
+.sc{font-family:'Unbounded',sans-serif;font-weight:600;font-size:14px;font-variant-numeric:tabular-nums}
+.del{background:transparent;border:1px solid rgba(255,77,109,.5);color:#ff8aa0;border-radius:999px;padding:8px 12px;font-weight:600;font-size:12px;cursor:pointer;min-width:74px}
+.del.armed{background:var(--red);color:#fff;border-color:var(--red)}
+.empty{padding:30px 10px;text-align:center;color:var(--muted)}
+.more{width:100%;margin-top:12px}
+.bulk{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(16px + env(safe-area-inset-bottom));display:flex;gap:12px;align-items:center;
+  background:#141a33;border:1px solid var(--line);border-radius:999px;padding:8px 8px 8px 18px;box-shadow:0 12px 40px rgba(0,0,0,.6);z-index:5}
+.bulk span{font-size:14px;font-weight:600;white-space:nowrap}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(80px + env(safe-area-inset-bottom));display:flex;gap:14px;align-items:center;
+  background:#eaf2ff;color:#07090f;border-radius:14px;padding:12px 16px;font-size:14px;font-weight:600;box-shadow:0 12px 40px rgba(0,0,0,.6);z-index:6;max-width:calc(100vw - 32px)}
+.toast .link{background:none;border:none;color:#5a3cff;font-weight:700;cursor:pointer;padding:0}
+@media (max-width:480px){
+  .row{grid-template-columns:24px 34px minmax(0,1fr) auto;grid-template-areas:"c r n s" "c r n d"}
+  .row input[type=checkbox]{grid-area:c}.rk{grid-area:r}.nm{grid-area:n}.sc{grid-area:s;text-align:right}.del{grid-area:d;justify-self:end}
+  .stat b{font-size:17px}
+}
+</style>
+</head>
+<body>
+<main class="wrap">
+  <header class="top">
+    <div><div class="kicker">LAYER RUN</div><h1>Admin</h1></div>
+    <button class="btn ghost hidden" id="logout" type="button">Log out</button>
+  </header>
+
+  <section class="card" id="login">
+    <form id="loginForm">
+      <label for="pw">Admin password</label>
+      <input id="pw" type="password" autocomplete="current-password" required>
+      <button class="btn primary" type="submit">Unlock</button>
+      <p class="err" id="loginErr"></p>
+    </form>
+  </section>
+
+  <section id="dash" class="hidden">
+    <div class="stats">
+      <div class="stat"><b id="statPlayers">0</b><small>players ranked</small></div>
+      <div class="stat"><b id="statX">0</b><small>finished the X steps</small></div>
+      <div class="stat"><b id="statFlag">0</b><small>flagged (loaded)</small></div>
+    </div>
+    <div class="tools">
+      <input id="search" placeholder="Search a name" autocomplete="off" spellcheck="false" aria-label="Search a name">
+      <div class="chips">
+        <button class="chip on" data-f="all" type="button">All</button>
+        <button class="chip" data-f="flag" type="button">Flagged</button>
+      </div>
+    </div>
+    <div class="actions">
+      <button class="btn ghost" id="refresh" type="button">Refresh</button>
+      <button class="btn ghost" id="csv" type="button">Download top 1,500 (CSV)</button>
+    </div>
+    <p class="legend"><span style="color:var(--amber)">ROUND</span> exact round score such as 20,000, typical of a score sent by hand. <span style="color:#ff8aa0">TOO HIGH</span> above 30,000, which takes 8+ minutes of flawless play at top speed. Flags are hints, not proof.</p>
+    <div class="list" id="list"></div>
+    <button class="btn ghost more hidden" id="more" type="button">Load more</button>
+  </section>
+</main>
+
+<div class="bulk hidden" id="bulk"><span id="bulkCount"></span><button class="btn danger" id="bulkDel" type="button">Delete selected</button></div>
+<div class="toast hidden" id="toast" role="status"><span id="toastText"></span><button class="link hidden" id="undo" type="button">UNDO</button></div>
+
+<script>
+const $ = (id) => document.getElementById(id);
+const fmt = (n) => Number(n).toLocaleString('en-US');
+const ROUND = (s) => s >= 1000 && s % 500 === 0;
+const HIGH = 30000;
+let PW = '';
+try { PW = sessionStorage.getItem('lr_admin') || ''; } catch {}
+let entries = [], total = 0, filter = 'all', lastDeleted = null, toastTimer = null, busy = false;
+const selected = new Set();
+
+async function api(action, payload) {
+  const r = await fetch('/api/admin', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + PW },
+    body: JSON.stringify(Object.assign({ action }, payload || {})),
+  });
+  const d = await r.json().catch(() => ({}));
+  if (r.status === 401 || r.status === 429) { logout(d.error || 'Wrong password.'); throw new Error('auth'); }
+  if (!r.ok) throw new Error(d.error || 'Request failed.');
+  return d;
+}
+
+function showToast(text, withUndo) {
+  $('toastText').textContent = text;
+  $('undo').classList.toggle('hidden', !withUndo);
+  $('toast').classList.remove('hidden');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => { $('toast').classList.add('hidden'); if (withUndo) lastDeleted = null; }, withUndo ? 10000 : 3500);
+}
+
+function logout(msg) {
+  PW = '';
+  try { sessionStorage.removeItem('lr_admin'); } catch {}
+  entries = []; selected.clear();
+  $('dash').classList.add('hidden'); $('logout').classList.add('hidden'); $('bulk').classList.add('hidden');
+  $('login').classList.remove('hidden');
+  $('loginErr').textContent = msg || '';
+  $('pw').value = '';
+}
+
+async function load(reset) {
+  if (busy) return;
+  busy = true;
+  try {
+    const d = await api('list', { offset: reset ? 0 : entries.length, limit: 200 });
+    entries = reset ? d.entries : entries.concat(d.entries);
+    total = d.total;
+    $('statPlayers').textContent = fmt(d.total);
+    $('statX').textContent = fmt(d.xusers);
+    if (reset) selected.clear();
+    render();
+  } catch (e) { if (e.message !== 'auth') showToast(e.message, false); }
+  finally { busy = false; }
+}
+
+function flagsOf(e) {
+  const f = [];
+  if (ROUND(e.score)) f.push(['round', 'ROUND']);
+  if (e.score > HIGH) f.push(['high', 'TOO HIGH']);
+  return f;
+}
+
+function render() {
+  const q = $('search').value.trim().toLowerCase();
+  const list = $('list');
+  list.textContent = '';
+  let flaggedCount = 0, shown = 0;
+  entries.forEach((e, i) => {
+    const flags = flagsOf(e);
+    if (flags.length) flaggedCount++;
+    if (filter === 'flag' && !flags.length) return;
+    if (q && !e.name.toLowerCase().includes(q)) return;
+    shown++;
+    const row = document.createElement('div');
+    row.className = 'row' + (flags.length ? ' flagged' : '') + (selected.has(e.name) ? ' sel' : '');
+    const cb = document.createElement('input');
+    cb.type = 'checkbox'; cb.checked = selected.has(e.name); cb.setAttribute('aria-label', 'Select ' + e.name);
+    cb.addEventListener('change', () => { cb.checked ? selected.add(e.name) : selected.delete(e.name); row.classList.toggle('sel', cb.checked); updateBulk(); });
+    const rk = document.createElement('div'); rk.className = 'rk'; rk.textContent = i + 1;
+    const nm = document.createElement('div'); nm.className = 'nm';
+    const n = document.createElement('span'); n.className = 'n'; n.textContent = e.name; nm.appendChild(n);
+    flags.forEach(([cls, label]) => { const b = document.createElement('span'); b.className = 'badge ' + cls; b.textContent = label; nm.appendChild(b); });
+    const sc = document.createElement('div'); sc.className = 'sc'; sc.textContent = fmt(e.score);
+    const del = document.createElement('button');
+    del.type = 'button'; del.className = 'del'; del.textContent = 'Delete';
+    let armTimer = null;
+    del.addEventListener('click', () => {
+      if (!del.classList.contains('armed')) {
+        del.classList.add('armed'); del.textContent = 'Confirm';
+        armTimer = setTimeout(() => { del.classList.remove('armed'); del.textContent = 'Delete'; }, 3000);
+        return;
+      }
+      clearTimeout(armTimer);
+      remove([e.name]);
+    });
+    row.append(cb, rk, nm, sc, del);
+    list.appendChild(row);
+  });
+  if (!shown) list.innerHTML = '<div class="empty">' + (entries.length ? 'Nothing matches.' : 'No scores yet.') + '</div>';
+  $('statFlag').textContent = fmt(flaggedCount);
+  $('more').classList.toggle('hidden', entries.length >= total);
+  $('more').textContent = 'Load more (' + fmt(entries.length) + ' of ' + fmt(total) + ')';
+  updateBulk();
+}
+
+function updateBulk() {
+  const n = selected.size;
+  $('bulk').classList.toggle('hidden', n === 0);
+  $('bulkCount').textContent = n + ' selected';
+  $('bulkDel').textContent = 'Delete selected';
+  $('bulkDel').classList.remove('armed');
+}
+
+async function remove(names) {
+  try {
+    const d = await api('delete', { names });
+    const gone = new Set(names);
+    entries = entries.filter((e) => !gone.has(e.name));
+    names.forEach((nm) => selected.delete(nm));
+    total = d.total;
+    $('statPlayers').textContent = fmt(total);
+    lastDeleted = d.deleted.map((r) => ({ name: r.name, score: r.score }));
+    render();
+    showToast('Deleted ' + d.removed + (d.removed === 1 ? ' score' : ' scores'), lastDeleted.length > 0);
+  } catch (e) { if (e.message !== 'auth') showToast(e.message, false); }
+}
+
+$('loginForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  PW = $('pw').value;
+  $('loginErr').textContent = '';
+  try {
+    await api('list', { limit: 1 });
+    try { sessionStorage.setItem('lr_admin', PW); } catch {}
+    $('login').classList.add('hidden'); $('dash').classList.remove('hidden'); $('logout').classList.remove('hidden');
+    load(true);
+  } catch (err) { if (err.message !== 'auth') $('loginErr').textContent = err.message; }
+});
+$('logout').addEventListener('click', () => logout(''));
+$('refresh').addEventListener('click', () => load(true));
+$('more').addEventListener('click', () => load(false));
+$('search').addEventListener('input', render);
+document.querySelectorAll('.chip').forEach((c) => c.addEventListener('click', () => {
+  filter = c.dataset.f;
+  document.querySelectorAll('.chip').forEach((x) => x.classList.toggle('on', x === c));
+  render();
+}));
+let bulkTimer = null;
+$('bulkDel').addEventListener('click', () => {
+  const b = $('bulkDel');
+  if (!b.classList.contains('armed')) {
+    b.classList.add('armed'); b.textContent = 'Confirm delete ' + selected.size;
+    bulkTimer = setTimeout(() => { b.classList.remove('armed'); b.textContent = 'Delete selected'; }, 3000);
+    return;
+  }
+  clearTimeout(bulkTimer);
+  remove([...selected]);
+});
+$('undo').addEventListener('click', async () => {
+  if (!lastDeleted || !lastDeleted.length) return;
+  try {
+    const d = await api('restore', { entries: lastDeleted });
+    lastDeleted = null;
+    showToast('Restored ' + d.restored, false);
+    load(true);
+  } catch (e) { if (e.message !== 'auth') showToast(e.message, false); }
+});
+$('csv').addEventListener('click', async () => {
+  try {
+    const d = await api('list', { offset: 0, limit: 1500 });
+    const lines = ['rank,name,score'].concat(d.entries.map((e, i) => (i + 1) + ',"' + e.name.replace(/"/g, '""') + '",' + e.score));
+    const blob = new Blob([lines.join('\n') + '\n'], { type: 'text/csv;charset=utf-8' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'layer-run-top-' + d.entries.length + '-' + new Date().toISOString().slice(0, 10) + '.csv';
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+    showToast('Downloaded ' + fmt(d.entries.length) + ' rows', false);
+  } catch (e) { if (e.message !== 'auth') showToast(e.message, false); }
+});
+
+if (PW) {
+  api('list', { limit: 1 }).then(() => {
+    $('login').classList.add('hidden'); $('dash').classList.remove('hidden'); $('logout').classList.remove('hidden');
+    load(true);
+  }).catch(() => {});
+}
+</script>
+</body>
+</html>

@@ -29,6 +29,17 @@ Görevlerdeki gönderi `index.html` içindeki `X_POST_ID` değeridir (şu an `21
 
 Not: X, beğeni, repost ve yorumların bir web sitesi tarafından kontrol edilmesine ancak ücretli API'siyle izin verir. Bu yüzden adımlar güvene dayalıdır. Site doğru X sayfasını açar ve oyuncu "I'VE DONE IT" der. Kaydedilen kullanıcı adlarıyla elle kontrol yapılabilir.
 
+## Yönetici sayfası
+
+`/admin` adresi (ör. layerrun.fun/admin) şifreyle açılan bir yönetici sayfasıdır. Oyunda hiçbir yerden link verilmez, arama motorlarına kapalıdır.
+
+- Skor tablosunu listeler, isimle arama yapılır.
+- Şüpheli skorları işaretler: **ROUND** (20,000 gibi tam yuvarlak skorlar) ve **TOO HIGH** (30,000 üstü, en yüksek hızda 8 dakikadan uzun kusursuz oyun ister). İşaretler ipucudur, kanıt değildir.
+- Tek tek veya toplu silme yapılır. Silme iki dokunuşla onaylanır, hemen ardından 10 saniye boyunca **UNDO** ile geri alınabilir. Silinen her kayıt (isim, skor, zaman) ayrıca `ntr:admin:deleted` listesinde saklanır.
+- İlk 1.500'ü CSV olarak indirir (WL listesi için).
+
+Şifre sunucuda kontrol edilir. Aynı IP'den 15 dakikada 10 yanlış denemeden sonra giriş 15 dakika kilitlenir. Kendi şifreni kullanmak için Vercel'de **Settings > Environment Variables** altına `ADMIN_PASSWORD` ekleyip yeniden yayınla. Bu değişken varsa koddaki yerleşik şifre devre dışı kalır.
+
 ## Proje yapısı
 
 ```
@@ -37,6 +48,8 @@ api/session.js      POST  - her oyun başında tek kullanımlık bir oturum anah
 api/score.js        POST  - skoru doğrular ve kaydeder (oyuncu başına en iyi skor)
 api/leaderboard.js  GET   - ilk 25 oyuncuyu ve toplam oyuncu sayısını döndürür
 api/xtasks.js       POST  - X adımlarını bitiren oyuncunun kullanıcı adını kaydeder
+api/admin.js        POST  - yönetici işlemleri (listele, sil, geri al), şifre ister
+admin.html          Yönetici sayfası (/admin)
 lib/redis.js        Upstash bağlantısı ve anahtar adları
 vendor/             Three.js (sitenin kendisinden sunulur, dış CDN'e bağlı değildir)
 ```
