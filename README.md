@@ -37,6 +37,7 @@ Not: X, beğeni, repost ve yorumların bir web sitesi tarafından kontrol edilme
 - Şüpheli skorları işaretler: **ROUND** (20,000 gibi tam yuvarlak skorlar) ve **TOO HIGH** (30,000 üstü, en yüksek hızda 8 dakikadan uzun kusursuz oyun ister). İşaretler ipucudur, kanıt değildir.
 - Tek tek veya toplu silme yapılır. Silme iki dokunuşla onaylanır, hemen ardından 10 saniye boyunca **UNDO** ile geri alınabilir. Silinen her kayıt (isim, skor, zaman) ayrıca `ntr:admin:deleted` listesinde saklanır.
 - İlk 1.500'ü CSV olarak indirir (WL listesi için).
+- **Live now** paneli: şu an oyun içinde olan oyuncuları (X kullanıcı adı, anlık skor, mesafe, ne kadar süredir oynadığı) gösterir, 10 saniyede bir yenilenir. Oyun, bir oyun sürerken her 30 saniyede `/api/live`'a sinyal gönderir. Her oyuncu dakikada 2 istek demektir; Vercel ve Upstash kullanım limitlerinde bunu hesaba kat.
 
 Şifre sunucuda kontrol edilir. Aynı IP'den 15 dakikada 10 yanlış denemeden sonra giriş 15 dakika kilitlenir. Kendi şifreni kullanmak için Vercel'de **Settings > Environment Variables** altına `ADMIN_PASSWORD` ekleyip yeniden yayınla. Bu değişken varsa koddaki yerleşik şifre devre dışı kalır.
 
@@ -48,7 +49,8 @@ api/session.js      POST  - her oyun başında tek kullanımlık bir oturum anah
 api/score.js        POST  - skoru doğrular ve kaydeder (oyuncu başına en iyi skor)
 api/leaderboard.js  GET   - ilk 25 oyuncuyu ve toplam oyuncu sayısını döndürür
 api/xtasks.js       POST  - X adımlarını bitiren oyuncunun kullanıcı adını kaydeder
-api/admin.js        POST  - yönetici işlemleri (listele, sil, geri al), şifre ister
+api/admin.js        POST  - yönetici işlemleri (listele, canlı oyuncular, sil, geri al), şifre ister
+api/live.js         POST  - oyun sürerken gelen 30 saniyelik canlılık sinyali
 admin.html          Yönetici sayfası (/admin)
 lib/redis.js        Upstash bağlantısı ve anahtar adları
 vendor/             Three.js (sitenin kendisinden sunulur, dış CDN'e bağlı değildir)

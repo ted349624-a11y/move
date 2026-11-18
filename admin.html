@@ -32,6 +32,22 @@ input:focus{border-color:rgba(0,229,255,.6);box-shadow:0 0 0 3px rgba(0,229,255,
 .ghost:hover{background:rgba(255,255,255,.12)}
 .danger{background:var(--red);color:#fff}
 .err{min-height:20px;margin-top:10px;font-size:14px;color:var(--red)}
+.live{background:var(--card);border:1px solid rgba(61,255,138,.28);border-radius:20px;padding:16px 16px 12px;margin-bottom:14px}
+.live-head{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.live-num{display:flex;align-items:baseline;gap:10px}
+.live-num b{font-family:'Unbounded',sans-serif;font-weight:700;font-size:30px}
+.live-num small{font-size:13px;color:var(--muted)}
+.dot{display:inline-block;width:10px;height:10px;border-radius:50%;background:var(--lime);box-shadow:0 0 10px var(--lime);animation:pulse 1.6s ease-in-out infinite;margin-right:2px}
+@keyframes pulse{50%{opacity:.35}}
+.live-meta{font-size:12px;color:var(--muted);text-align:right}
+.live-list{margin-top:12px;display:flex;flex-direction:column;gap:4px;max-height:320px;overflow:auto}
+.lrow{display:grid;grid-template-columns:minmax(0,1fr) auto auto auto;gap:12px;align-items:center;padding:8px 10px;border-radius:10px;background:rgba(255,255,255,.03);font-size:14px}
+.lrow .u{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:600}
+.lrow .u.guest{color:var(--muted);font-weight:500}
+.lrow .s{font-family:'Unbounded',sans-serif;font-weight:600;font-size:13px;font-variant-numeric:tabular-nums}
+.lrow .d,.lrow .t{color:var(--muted);font-size:12px;font-variant-numeric:tabular-nums;white-space:nowrap}
+.lrow.hot{background:rgba(255,77,109,.1)}
+.lhead{font-size:11px;font-weight:600;letter-spacing:.08em;color:var(--muted);background:none;padding:2px 10px}
 .stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-bottom:14px}
 .stat{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px}
 .stat b{display:block;font-family:'Unbounded',sans-serif;font-weight:600;font-size:20px}
@@ -91,6 +107,13 @@ input:focus{border-color:rgba(0,229,255,.6);box-shadow:0 0 0 3px rgba(0,229,255,
   </section>
 
   <section id="dash" class="hidden">
+    <div class="live" id="live">
+      <div class="live-head">
+        <div class="live-num"><span class="dot"></span><b id="liveCount">0</b><small>playing now</small></div>
+        <div class="live-meta" id="liveMeta">updates every 10 s</div>
+      </div>
+      <div class="live-list" id="liveList"></div>
+    </div>
     <div class="stats">
       <div class="stat"><b id="statPlayers">0</b><small>players ranked</small></div>
       <div class="stat"><b id="statX">0</b><small>finished the X steps</small></div>
@@ -296,6 +319,38 @@ $('csv').addEventListener('click', async () => {
     showToast('Downloaded ' + fmt(d.entries.length) + ' rows', false);
   } catch (e) { if (e.message !== 'auth') showToast(e.message, false); }
 });
+
+// ---------- Live now ----------
+let liveTimer = null;
+const ago = (ms) => (ms < 60000 ? Math.max(1, Math.round(ms / 1000)) + 's' : Math.round(ms / 60000) + 'm');
+const mmss = (t) => Math.floor(t / 60) + ':' + String(t % 60).padStart(2, '0');
+async function loadLive() {
+  if (!PW || $('dash').classList.contains('hidden') || document.hidden) return;
+  try {
+    const d = await api('live');
+    $('liveCount').textContent = fmt(d.count);
+    $('liveMeta').textContent = 'updated ' + new Date(d.now).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    const list = $('liveList');
+    list.textContent = '';
+    if (!d.players.length) { list.innerHTML = '<div class="empty" style="padding:14px">Nobody is in a run right now.</div>'; return; }
+    const h = document.createElement('div'); h.className = 'lrow lhead';
+    ['PLAYER', 'SCORE', 'DISTANCE', 'IN RUN'].forEach((t) => { const c = document.createElement('div'); c.textContent = t; h.appendChild(c); });
+    list.appendChild(h);
+    d.players.forEach((p) => {
+      const r = document.createElement('div'); r.className = 'lrow' + (p.score > HIGH ? ' hot' : '');
+      const u = document.createElement('div'); u.className = 'u' + (p.user ? '' : ' guest'); u.textContent = p.user ? '@' + p.user : 'guest';
+      const sc = document.createElement('div'); sc.className = 's'; sc.textContent = fmt(p.score);
+      const di = document.createElement('div'); di.className = 'd'; di.textContent = fmt(p.dist) + ' m';
+      const t = document.createElement('div'); t.className = 't'; t.textContent = mmss(p.t) + ' · ' + ago(d.now - p.at) + ' ago';
+      r.append(u, sc, di, t);
+      list.appendChild(r);
+    });
+  } catch (e) { if (e.message !== 'auth') $('liveMeta').textContent = 'could not update'; }
+}
+function startLive() { clearInterval(liveTimer); loadLive(); liveTimer = setInterval(loadLive, 10000); }
+document.addEventListener('visibilitychange', () => { if (!document.hidden) loadLive(); });
+const _load = load;
+load = async function (reset) { await _load(reset); if (reset) startLive(); };
 
 if (PW) {
   api('list', { limit: 1 }).then(() => {

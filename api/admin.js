@@ -65,6 +65,25 @@ export default async function handler(req, res) {
       return res.status(200).json({ entries, total: Number(total), xusers: Number(xusers), offset });
     }
 
+    if (body.action === 'live') {
+      const keys = [];
+      let cursor = '0';
+      for (let i = 0; i < 30; i++) {
+        const [next, batch] = await redis.scan(cursor, { match: KEYS.livePattern, count: 1000 });
+        keys.push(...batch);
+        cursor = String(next);
+        if (cursor === '0' || keys.length >= 5000) break;
+      }
+      const values = keys.length ? await redis.mget(...keys.slice(0, 5000)) : [];
+      const players = [];
+      for (const v of values) {
+        if (!v) continue;
+        try { const p = JSON.parse(v); players.push({ user: String(p.user || ''), score: Number(p.score) || 0, dist: Number(p.dist) || 0, t: Number(p.t) || 0, at: Number(p.at) || 0 }); } catch {}
+      }
+      players.sort((a, b) => b.score - a.score);
+      return res.status(200).json({ count: players.length, players: players.slice(0, 200), now: Date.now() });
+    }
+
     if (body.action === 'delete') {
       const names = cleanNames(body.names);
       if (!names.length) return res.status(400).json({ error: 'No names given.' });

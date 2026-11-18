@@ -1118,6 +1118,7 @@ function crash(ob) {
   endDrag(null);
   sfx.crash();
   engineStop();
+  liveStop();
   vibrate([60, 40, 140]);
   if (S.score > S.best) { S.best = S.score; store.set('ntr_best', String(S.best)); S.newBest = true; } else S.newBest = false;
 }
@@ -1140,6 +1141,31 @@ function updateHud() {
 }
 
 /* =========================================================
+   Live heartbeat for the admin "Live now" panel (every 30 s during a run)
+   ========================================================= */
+const LIVE_EVERY = 30000;
+let liveTimer = null, liveId = null;
+function liveBeat(end) {
+  if (!liveId) return;
+  const body = end
+    ? { id: liveId, end: true }
+    : { id: liveId, user: (typeof XT !== 'undefined' && XT.user) || '', score: S.score, dist: Math.floor(S.dist), t: Math.round(S.gameTime) };
+  fetch('/api/live', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body), keepalive: true }).catch(() => {});
+  if (end) liveId = null;
+}
+function liveStart() {
+  liveId = (Math.random().toString(36).slice(2, 12) + Date.now().toString(36)).slice(0, 24);
+  liveBeat(false);
+  clearInterval(liveTimer);
+  liveTimer = setInterval(() => { if (S.state === 'playing' && !S.paused) liveBeat(false); }, LIVE_EVERY);
+}
+function liveStop() {
+  clearInterval(liveTimer);
+  liveTimer = null;
+  liveBeat(true);
+}
+
+/* =========================================================
    Screens & flow
    ========================================================= */
 const screens = ['menu', 'over', 'board', 'paused', 'tasks'];
@@ -1152,6 +1178,7 @@ function resetPalette() {
 }
 
 function goMenu() {
+  liveStop();
   S.state = 'menu';
   S.paused = false;
   player.visible = true;
@@ -1190,6 +1217,7 @@ function startGame() {
   updateHud();
   sfx.start();
   engineStart();
+  liveStart();
 }
 
 function showOver() {
