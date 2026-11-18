@@ -25,7 +25,7 @@ Canlı: https://move-cyan.vercel.app
 
 Görevler o cihazda bir kez yapılır. Sayfa kapanırsa kaldığı adımdan devam edilir. Bittiğinde kullanıcı adı Upstash'te `ntr:xusers` anahtarına kaydedilir (Upstash konsolu > Data Browser), skor tablosundaki isim alanı da bu adla dolu gelir.
 
-Görevlerdeki gönderi `index.html` içindeki `X_POST_ID` değeridir (şu an `2122979606886281243`, linkin sonundaki sayı). Telefonda beğeni, repost ve yorum adımları gönderinin kendisini açar (X uygulamasında açılır). Bilgisayarda X'in tek dokunuşluk beğeni, repost ve boş yanıt kutusu sayfaları açılır.
+Görevlerdeki gönderi `index.html` içindeki `X_POST_ID` değeridir (şu an `2123034648846504304`, linkin sonundaki sayı). Telefonda beğeni, repost ve yorum adımları gönderinin kendisini açar (X uygulamasında açılır). Bilgisayarda X'in tek dokunuşluk beğeni, repost ve boş yanıt kutusu sayfaları açılır.
 
 Not: X, beğeni, repost ve yorumların bir web sitesi tarafından kontrol edilmesine ancak ücretli API'siyle izin verir. Bu yüzden adımlar güvene dayalıdır. Site doğru X sayfasını açar ve oyuncu "I'VE DONE IT" der. Kaydedilen kullanıcı adlarıyla elle kontrol yapılabilir.
 
