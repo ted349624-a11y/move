@@ -62,7 +62,8 @@ export default async function handler(req, res) {
       ]);
       const entries = [];
       for (let i = 0; i < raw.length; i += 2) entries.push({ name: String(raw[i]), score: Number(raw[i + 1]) });
-      return res.status(200).json({ entries, total: Number(total), xusers: Number(xusers), offset });
+      const wl = Number(await redis.hlen(KEYS.wl));
+      return res.status(200).json({ entries, total: Number(total), xusers: Number(xusers), wl, offset });
     }
 
     if (body.action === 'live') {
@@ -82,6 +83,16 @@ export default async function handler(req, res) {
       }
       players.sort((a, b) => b.score - a.score);
       return res.status(200).json({ count: players.length, players: players.slice(0, 200), now: Date.now() });
+    }
+
+    if (body.action === 'wl') {
+      const all = (await redis.hgetall(KEYS.wl)) || {};
+      const entries = [];
+      for (const v of Object.values(all)) {
+        try { const e = typeof v === 'string' ? JSON.parse(v) : v; entries.push({ username: String(e.username), wallet: String(e.wallet), at: String(e.at) }); } catch {}
+      }
+      entries.sort((a, b) => (a.at < b.at ? -1 : 1));
+      return res.status(200).json({ count: entries.length, entries });
     }
 
     if (body.action === 'delete') {

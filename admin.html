@@ -48,7 +48,8 @@ input:focus{border-color:rgba(0,229,255,.6);box-shadow:0 0 0 3px rgba(0,229,255,
 .lrow .d,.lrow .t{color:var(--muted);font-size:12px;font-variant-numeric:tabular-nums;white-space:nowrap}
 .lrow.hot{background:rgba(255,77,109,.1)}
 .lhead{font-size:11px;font-weight:600;letter-spacing:.08em;color:var(--muted);background:none;padding:2px 10px}
-.stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-bottom:14px}
+.stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:14px}
+@media (max-width:480px){.stats{grid-template-columns:repeat(2,minmax(0,1fr))}}
 .stat{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px}
 .stat b{display:block;font-family:'Unbounded',sans-serif;font-weight:600;font-size:20px}
 .stat small{font-size:12px;color:var(--muted)}
@@ -117,6 +118,7 @@ input:focus{border-color:rgba(0,229,255,.6);box-shadow:0 0 0 3px rgba(0,229,255,
     <div class="stats">
       <div class="stat"><b id="statPlayers">0</b><small>players ranked</small></div>
       <div class="stat"><b id="statX">0</b><small>finished the X steps</small></div>
+      <div class="stat"><b id="statWl">0</b><small>on the whitelist</small></div>
       <div class="stat"><b id="statFlag">0</b><small>flagged (loaded)</small></div>
     </div>
     <div class="tools">
@@ -129,6 +131,7 @@ input:focus{border-color:rgba(0,229,255,.6);box-shadow:0 0 0 3px rgba(0,229,255,
     <div class="actions">
       <button class="btn ghost" id="refresh" type="button">Refresh</button>
       <button class="btn ghost" id="csv" type="button">Download top 1,500 (CSV)</button>
+      <button class="btn ghost" id="wlcsv" type="button">Download whitelist (CSV)</button>
     </div>
     <p class="legend"><span style="color:var(--amber)">ROUND</span> exact round score such as 20,000, typical of a score sent by hand. <span style="color:#ff8aa0">TOO HIGH</span> above 30,000, which takes 8+ minutes of flawless play at top speed. Flags are hints, not proof.</p>
     <div class="list" id="list"></div>
@@ -188,6 +191,7 @@ async function load(reset) {
     total = d.total;
     $('statPlayers').textContent = fmt(d.total);
     $('statX').textContent = fmt(d.xusers);
+    $('statWl').textContent = fmt(d.wl || 0);
     if (reset) selected.clear();
     render();
   } catch (e) { if (e.message !== 'auth') showToast(e.message, false); }
@@ -317,6 +321,24 @@ $('csv').addEventListener('click', async () => {
     document.body.appendChild(a); a.click(); a.remove();
     setTimeout(() => URL.revokeObjectURL(a.href), 2000);
     showToast('Downloaded ' + fmt(d.entries.length) + ' rows', false);
+  } catch (e) { if (e.message !== 'auth') showToast(e.message, false); }
+});
+
+function downloadCsv(name, lines) {
+  const blob = new Blob([lines.join('\n') + '\n'], { type: 'text/csv;charset=utf-8' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = name;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+}
+$('wlcsv').addEventListener('click', async () => {
+  try {
+    const d = await api('wl');
+    const q = (v) => '"' + String(v).replace(/"/g, '""') + '"';
+    downloadCsv('layer-run-whitelist-' + d.count + '-' + new Date().toISOString().slice(0, 10) + '.csv',
+      ['x_username,wallet,joined_at'].concat(d.entries.map((e) => [q(e.username), q(e.wallet), q(e.at)].join(','))));
+    showToast('Downloaded ' + fmt(d.count) + ' whitelist entries', false);
   } catch (e) { if (e.message !== 'auth') showToast(e.message, false); }
 });
 

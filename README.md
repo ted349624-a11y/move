@@ -29,6 +29,15 @@ Görevlerdeki gönderi `index.html` içindeki `X_POST_ID` değeridir (şu an `21
 
 Not: X, beğeni, repost ve yorumların bir web sitesi tarafından kontrol edilmesine ancak ücretli API'siyle izin verir. Bu yüzden adımlar güvene dayalıdır. Site doğru X sayfasını açar ve oyuncu "I'VE DONE IT" der. Kaydedilen kullanıcı adlarıyla elle kontrol yapılabilir.
 
+## Whitelist sayfası
+
+`/whitelist` (ör. layerrun.fun/whitelist): arka planda logodaki çekirdeğin enerji toplayıp patladığı canlı 3D efekt, önünde oyundakiyle aynı görev destesi. Adımlar: X kullanıcı adı, takip, beğeni, repost, yorum (oyuncu kendi yazar), bildirim, cüzdan adresi (EVM `0x…` veya Solana).
+
+- Kayıtlar Upstash'te `ntr:wl` (X kullanıcı adı → cüzdan) ve `ntr:wl:wallets` (cüzdan → kullanıcı adı) anahtarlarında. Bir X hesabı ve bir cüzdan yalnızca bir kez kaydolabilir.
+- Oyunda kullanıcı adı, takip ve bildirim adımlarını yapmış olanlar bunları tekrar görmez.
+- Gönderi linki `whitelist.html` içindeki `X_POST_ID` değeridir. Boşken beğeni, repost ve yorum adımları @LayerRun profilini açar. Değiştiğinde bu üç adım herkes için sıfırlanır.
+- Kayıt sayısı sayfada "N JOINED" olarak görünür. Liste admin sayfasından **Download whitelist (CSV)** ile indirilir.
+
 ## Yönetici sayfası
 
 `/admin` adresi (ör. layerrun.fun/admin) şifreyle açılan bir yönetici sayfasıdır. Oyunda hiçbir yerden link verilmez, arama motorlarına kapalıdır.
@@ -51,6 +60,8 @@ api/leaderboard.js  GET   - ilk 25 oyuncuyu ve toplam oyuncu sayısını döndü
 api/xtasks.js       POST  - X adımlarını bitiren oyuncunun kullanıcı adını kaydeder
 api/admin.js        POST  - yönetici işlemleri (listele, canlı oyuncular, sil, geri al), şifre ister
 api/live.js         POST  - oyun sürerken gelen 30 saniyelik canlılık sinyali
+api/wl.js           GET/POST - whitelist kayıt sayısı / kayıt (X kullanıcı adı + cüzdan)
+whitelist.html      Whitelist sayfası (/whitelist)
 admin.html          Yönetici sayfası (/admin)
 lib/redis.js        Upstash bağlantısı ve anahtar adları
 vendor/             Three.js (sitenin kendisinden sunulur, dış CDN'e bağlı değildir)
