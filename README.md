@@ -35,7 +35,7 @@ Not: X, beğeni, repost ve yorumların bir web sitesi tarafından kontrol edilme
 
 - Kayıtlar Upstash'te `ntr:wl` (X kullanıcı adı → cüzdan) ve `ntr:wl:wallets` (cüzdan → kullanıcı adı) anahtarlarında. Bir X hesabı ve bir cüzdan yalnızca bir kez kaydolabilir.
 - Oyunda kullanıcı adı, takip ve bildirim adımlarını yapmış olanlar bunları tekrar görmez.
-- Gönderi linki `whitelist.html` içindeki `X_POST_ID` değeridir. Boşken beğeni, repost ve yorum adımları @LayerRun profilini açar. Değiştiğinde bu üç adım herkes için sıfırlanır.
+- Gönderi `whitelist.html` içindeki `X_POST_ID` değeridir (şu an `2123226270792355926`). Telefonda gönderinin kendisi, bilgisayarda X'in tek tıklık sayfaları açılır. Değiştiğinde beğeni, repost ve yorum adımları herkes için sıfırlanır.
 - Kayıt sayısı sayfada "N JOINED" olarak görünür. Liste admin sayfasından **Download whitelist (CSV)** ile indirilir.
 
 ## Yönetici sayfası

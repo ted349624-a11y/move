@@ -253,7 +253,7 @@ function startScene() {
 const X_HANDLE = 'LayerRun';
 // Paste the whitelist post's ID here (the number at the end of x.com/LayerRun/status/...).
 // Until it is set, the like, repost and reply steps open the @LayerRun profile.
-const X_POST_ID = '';
+const X_POST_ID = '2123226270792355926';
 const PROFILE = `https://x.com/${X_HANDLE}`;
 const POST = X_POST_ID ? `https://x.com/${X_HANDLE}/status/${X_POST_ID}` : PROFILE;
 const postLink = (intent) => (!X_POST_ID ? PROFILE : isTouch ? POST : `https://x.com/intent/${intent}`);
