@@ -31,7 +31,7 @@ Not: X, beğeni, repost ve yorumların bir web sitesi tarafından kontrol edilme
 
 ## Whitelist sayfası
 
-`/whitelist` (ör. layerrun.fun/whitelist): arka planda logodaki çekirdeğin enerji toplayıp patladığı canlı 3D efekt, önünde oyundakiyle aynı görev destesi. Adımlar: X kullanıcı adı, takip, beğeni, repost, yorum (oyuncu kendi yazar), bildirim, cüzdan adresi (EVM `0x…` veya Solana).
+`/whitelist` (ör. layerrun.fun/whitelist): arka planda logodaki çekirdeğin enerji toplayıp patladığı canlı 3D efekt, önünde oyundakiyle aynı görev destesi. Adımlar: X kullanıcı adı, takip, beğeni, repost, yorum (oyuncu kendi yazar), bildirim, EVM cüzdan adresi (`0x…`).
 
 - Kayıtlar Upstash'te `ntr:wl` (X kullanıcı adı → cüzdan) ve `ntr:wl:wallets` (cüzdan → kullanıcı adı) anahtarlarında. Bir X hesabı ve bir cüzdan yalnızca bir kez kaydolabilir.
 - Oyunda kullanıcı adı, takip ve bildirim adımlarını yapmış olanlar bunları tekrar görmez.

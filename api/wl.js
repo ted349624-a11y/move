@@ -2,7 +2,6 @@ import { redis, KEYS, noDb } from '../lib/redis.js';
 
 const USER_RE = /^[A-Za-z0-9_]{1,15}$/;
 const EVM_RE = /^0x[a-fA-F0-9]{40}$/;
-const SOL_RE = /^[1-9A-HJ-NP-Za-km-z]{32,44}$/;
 
 // GET: how many have joined. POST { username, wallet }: join the whitelist.
 // One entry per X username and one per wallet; the first sign-up keeps it.
@@ -30,8 +29,7 @@ export default async function handler(req, res) {
   const username = String((body && body.username) || '').trim().replace(/^@/, '');
   const wallet = String((body && body.wallet) || '').trim();
   if (!USER_RE.test(username)) return res.status(400).json({ error: 'Invalid X username.' });
-  const evm = EVM_RE.test(wallet);
-  if (!evm && !SOL_RE.test(wallet)) return res.status(400).json({ error: 'That does not look like a wallet address.' });
+  if (!EVM_RE.test(wallet)) return res.status(400).json({ error: 'Paste an EVM address: 0x followed by 40 characters.' });
 
   try {
     const ip = String(req.headers['x-forwarded-for'] || '').split(',')[0].trim() || 'unknown';
@@ -39,7 +37,7 @@ export default async function handler(req, res) {
     if (!allowed) return res.status(429).json({ error: 'Too many requests. Try again in a few seconds.' });
 
     const userKey = username.toLowerCase();
-    const walletKey = evm ? wallet.toLowerCase() : wallet;
+    const walletKey = wallet.toLowerCase();
     const existing = await redis.hget(KEYS.wl, userKey);
     if (existing) {
       let prev = {};

@@ -280,7 +280,7 @@ const TASKS = [
     text: isTouch || !X_POST_ID ? 'Open the post, tap reply and write whatever you like, in your own words.' : 'Reply to the post. Write whatever you like, in your own words.',
     url: postLink(`tweet?in_reply_to=${X_POST_ID}`) },
   { id: 'notify', icon: ICONS.bell, title: 'Turn on notifications', text: `Open the @${X_HANDLE} profile and tap the bell so you never miss an update.`, url: PROFILE },
-  { id: 'wallet', icon: ICONS.wallet, title: 'Your wallet', text: 'Paste the wallet address you want on the whitelist (EVM 0x… or Solana).' },
+  { id: 'wallet', icon: ICONS.wallet, title: 'Your wallet', text: 'Paste the EVM wallet address (0x…) you want on the whitelist.' },
 ];
 const KEY = 'lr_wl';
 const W = (() => { try { return JSON.parse(store.get(KEY)) || {}; } catch { return {}; } })();
@@ -343,9 +343,9 @@ function buildCard(i) {
       W.user = h; complete();
     });
   } else if (t.id === 'wallet') {
-    inputCard(card, '', '0x… or Solana address', W.wallet || '', 'JOIN THE WHITELIST', async (v, err, btn) => {
+    inputCard(card, '', '0x… wallet address', W.wallet || '', 'JOIN THE WHITELIST', async (v, err, btn) => {
       const w = String(v || '').trim();
-      if (!/^0x[a-fA-F0-9]{40}$/.test(w) && !/^[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(w)) { err.textContent = 'That does not look like a wallet address. Check it and paste it again.'; return; }
+      if (!/^0x[a-fA-F0-9]{40}$/.test(w)) { err.textContent = 'Paste an EVM address: 0x followed by 40 characters.'; return; }
       err.textContent = ''; btn.disabled = true; btn.textContent = 'SAVING…';
       try {
         const r = await fetch('/api/wl', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ username: W.user, wallet: w }) });
