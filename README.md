@@ -12,9 +12,22 @@ Canlı: https://move-cyan.vercel.app
 - **Puan:** Gidilen her metre 1 puan. Bir engelin kıyısından sıyırırsan "near miss" +25, her enerji küresi +15. Küreler, bir sonraki engelin güvenli noktasına giden yolu gösterir.
 - **Hız ve bölgeler:** Hız sürekli artar. Her 600 metrede yeni bir bölgeye geçilir ve tünelin renkleri değişir (Cyan Drift, Magma Core, Toxic Grid, Ultraviolet).
 
-## Oyuna giriş
+## Oyuna giriş: tek seferlik X görevleri
 
-İlk kez PLAY'e basan oyuncu bir kullanıcı adı seçer (2-15 harf, rakam veya _) ve oyun hemen başlar. Bu ad o cihazda hatırlanır ve skor tablosundaki isim alanına gelir. X görevleri sadece whitelist sayfasındadır.
+İlk kez PLAY'e basan oyuncu, oyuna girmeden önce sırayla şu adımları tamamlar. Her biten görevin üstüne bir sonraki kart gelir:
+
+1. X kullanıcı adını yazar.
+2. @LayerRun'ı takip eder.
+3. Gönderiyi beğenir.
+4. Gönderiyi repostlar.
+5. Gönderiye yorum yazar. Yorumu oyuncu kendisi yazar, site hazır metin koymaz.
+6. @LayerRun profilinde bildirimleri açar.
+
+Görevler o cihazda bir kez yapılır. Sayfa kapanırsa kaldığı adımdan devam edilir. Bittiğinde kullanıcı adı Upstash'te `ntr:xusers` anahtarına kaydedilir (Upstash konsolu > Data Browser), skor tablosundaki isim alanı da bu adla dolu gelir.
+
+Görevlerdeki gönderi `index.html` içindeki `X_POST_ID` değeridir (linkin sonundaki sayı). Boşken beğeni, repost ve yorum adımları @LayerRun profilini açar. Telefonda beğeni, repost ve yorum adımları gönderinin kendisini açar (X uygulamasında açılır). Bilgisayarda X'in tek dokunuşluk beğeni, repost ve boş yanıt kutusu sayfaları açılır.
+
+Not: X, beğeni, repost ve yorumların bir web sitesi tarafından kontrol edilmesine ancak ücretli API'siyle izin verir. Bu yüzden adımlar güvene dayalıdır. Site doğru X sayfasını açar ve oyuncu "I'VE DONE IT" der. Kaydedilen kullanıcı adlarıyla elle kontrol yapılabilir.
 
 ## Whitelist sayfası
 
@@ -44,7 +57,7 @@ index.html          Oyunun tamamı (grafik, ses, arayüz)
 api/session.js      POST  - her oyun başında tek kullanımlık bir oturum anahtarı verir
 api/score.js        POST  - skoru doğrular ve kaydeder (oyuncu başına en iyi skor)
 api/leaderboard.js  GET   - ilk 25 oyuncuyu ve toplam oyuncu sayısını döndürür
-api/xtasks.js       POST  - (artık kullanılmıyor) eski X adımlarını bitirenleri kaydederdi
+api/xtasks.js       POST  - X adımlarını bitiren oyuncunun kullanıcı adını kaydeder
 api/admin.js        POST  - yönetici işlemleri (listele, canlı oyuncular, sil, geri al), şifre ister
 api/live.js         POST  - oyun sürerken gelen 30 saniyelik canlılık sinyali
 api/wl.js           GET/POST - whitelist kayıt sayısı / kayıt (X kullanıcı adı + cüzdan)

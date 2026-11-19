@@ -167,7 +167,7 @@ input:focus{border-color:rgba(0,229,255,.7);box-shadow:0 0 0 4px rgba(0,229,255,
 .tprog{height:4px;border-radius:4px;background:rgba(255,255,255,.1);margin:18px 0 10px;overflow:hidden}
 .tbar{height:100%;width:0;border-radius:4px;background:linear-gradient(90deg,var(--cyan),var(--magenta));box-shadow:0 0 12px rgba(0,229,255,.6);transition:width .5s ease}
 .tstep{font-size:11px;font-weight:600;letter-spacing:.3em;color:var(--muted)}
-.deck{display:grid;margin-top:18px}
+.deck{display:grid;margin-top:18px;padding-bottom:42px}
 .card{grid-area:1/1;align-self:start;position:relative;padding:22px 20px 20px;border-radius:20px;text-align:center;
   background:linear-gradient(180deg,#151b36,#0a0e20);border:1px solid rgba(255,255,255,.14);
   box-shadow:0 18px 44px rgba(0,0,0,.55),inset 0 1px 0 rgba(255,255,255,.06);transform-origin:50% 100%;
@@ -257,10 +257,10 @@ input:focus{border-color:rgba(0,229,255,.7);box-shadow:0 0 0 4px rgba(0,229,255,
 <section id="tasks" class="screen hidden">
   <div class="panel tasks-panel">
     <button class="icon-btn tasks-close" id="btnTasksClose" aria-label="Close"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
-    <div class="kicker">LAYER RUN</div>
-    <h2>PICK YOUR NAME</h2>
-    <div class="tprog hidden"><div class="tbar" id="tasksBar"></div></div>
-    <div class="tstep hidden" id="tasksStep"></div>
+    <div class="kicker">ONE-TIME ACCESS</div>
+    <h2>UNLOCK THE GAME</h2>
+    <div class="tprog"><div class="tbar" id="tasksBar"></div></div>
+    <div class="tstep" id="tasksStep"></div>
     <div class="deck" id="deck"></div>
   </div>
 </section>
@@ -1315,8 +1315,18 @@ async function openBoard(from) {
 function closeBoard() { show(boardReturn); }
 
 /* =========================================================
-   Pick a username before the first run (shown on the leaderboard)
+   One-time X tasks before the first run
    ========================================================= */
+const X_HANDLE = 'LayerRun';
+// The post for the like, repost and reply steps (the number at the end of x.com/LayerRun/status/...).
+// Until it is set, those steps open the @LayerRun profile.
+const X_POST_ID = '';
+const X_PROFILE_URL = `https://x.com/${X_HANDLE}`;
+const X_POST_URL = X_POST_ID ? `https://x.com/${X_HANDLE}/status/${X_POST_ID}` : X_PROFILE_URL;
+const POST_KEY = X_POST_ID || 'pinned';
+// Phones open x.com links in the X app, where the person is signed in, so they get the post itself.
+// On desktop, X's one-tap pages (like, repost, an empty reply box) work in the browser.
+const postLink = (intent) => (!X_POST_ID ? X_PROFILE_URL : isTouch ? X_POST_URL : `https://x.com/intent/${intent}`);
 const svg = (d) => `<svg viewBox="0 0 24 24" aria-hidden="true">${d}</svg>`;
 const ICONS = {
   at: svg('<circle cx="12" cy="12" r="4"/><path d="M16 8v5a3 3 0 0 0 6 0v-1a10 10 0 1 0-4 8"/>'),
@@ -1329,7 +1339,23 @@ const ICONS = {
   play: svg('<path d="M7 4l13 8-13 8z"/>'),
 };
 const TASKS = [
-  { id: 'user', icon: ICONS.at, title: 'Choose a username', text: 'This is the name shown on the leaderboard.' },
+  { id: 'user', icon: ICONS.at, title: 'Your X username', text: 'Enter the X account you will use for the next steps.' },
+  { id: 'follow', icon: ICONS.follow, title: `Follow @${X_HANDLE}`,
+    text: `Follow @${X_HANDLE} on X to keep up with the game.`,
+    url: isTouch ? X_PROFILE_URL : `https://x.com/intent/follow?screen_name=${X_HANDLE}` },
+  // The post steps are tied to the post: changing X_POST_ID asks everyone to do them again.
+  { id: `like-${POST_KEY}`, icon: ICONS.heart, title: 'Like the post',
+    text: X_POST_ID ? 'Open the post on X and tap the heart.' : `Open @${X_HANDLE} on X and like the pinned post.`,
+    url: postLink(`like?tweet_id=${X_POST_ID}`) },
+  { id: `repost-${POST_KEY}`, icon: ICONS.repost, title: 'Repost it',
+    text: 'Repost the same post so your followers see it.',
+    url: postLink(`retweet?tweet_id=${X_POST_ID}`) },
+  { id: `reply-${POST_KEY}`, icon: ICONS.reply, title: 'Leave a reply',
+    text: isTouch || !X_POST_ID ? 'Open the post, tap reply and write whatever you like, in your own words.' : 'Reply to the post. Write whatever you like, in your own words.',
+    url: postLink(`tweet?in_reply_to=${X_POST_ID}`) },
+  { id: 'notify', icon: ICONS.bell, title: 'Turn on notifications',
+    text: `Open the @${X_HANDLE} profile and tap the bell so you never miss an update.`,
+    url: X_PROFILE_URL },
 ];
 const XT_KEY = 'lr_xtasks';
 const XT = (() => { try { return JSON.parse(store.get(XT_KEY)) || {}; } catch { return {}; } })();
@@ -1350,6 +1376,12 @@ const saveXT = () => store.set(XT_KEY, JSON.stringify(XT));
 function cleanHandle(v) {
   // accepts "name", "@name" or a pasted profile link; anything else is rejected, never trimmed down
   return String(v || '').trim().replace(/^https?:\/\/(www\.)?(x|twitter)\.com\//i, '').replace(/^@/, '').replace(/[/?#].*$/, '');
+}
+function recordX() {
+  if (!xDone() || XT.recorded) return;
+  fetch('/api/xtasks', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ username: XT.user }) })
+    .then((r) => { if (r.ok) { XT.recorded = true; saveXT(); } })
+    .catch(() => {});
 }
 function addText(el, cls, text, tag = 'div') {
   const n = document.createElement(tag);
@@ -1378,14 +1410,14 @@ function buildCard(i) {
   if (t.id === 'user') {
     const form = document.createElement('form');
     form.autocomplete = 'off';
-    form.innerHTML = '<label class="handle"><span>@</span><input maxlength="40" placeholder="username" spellcheck="false" autocapitalize="off" aria-label="Username"></label><button class="btn primary" type="submit">PLAY</button>';
+    form.innerHTML = '<label class="handle"><span>@</span><input maxlength="40" placeholder="username" spellcheck="false" autocapitalize="off" aria-label="X username"></label><button class="btn primary" type="submit">CONTINUE</button>';
     const input = form.querySelector('input');
     input.value = XT.user;
     const err = addText(card, 'card-err', '');
     form.addEventListener('submit', (e) => {
       e.preventDefault();
       const h = cleanHandle(input.value);
-      if (!/^[A-Za-z0-9_]{2,15}$/.test(h)) { err.textContent = 'Use 2-15 letters, numbers or _.'; return; }
+      if (!/^[A-Za-z0-9_]{1,15}$/.test(h)) { err.textContent = 'Use your X handle: letters, numbers and _ (up to 15).'; return; }
       XT.user = h;
       input.blur();
       completeStep();
@@ -1439,21 +1471,18 @@ function completeStep() {
   if (cur < 0) return;
   XT.done.push(TASKS[cur].id);
   saveXT();
-  if (xDone()) {
-    if (XT.user) store.set('ntr_name', XT.user);
-    initAudio();
-    startGame();
-    return;
-  }
   $('deck').appendChild(buildCard(xDone() ? TASKS.length : pendingIndex()));
   layoutDeck(true);
   vibrate(12);
   if (audio.ctx) sfx.pickup(XT.done.length + 2);
+  if (xDone()) recordX();
 }
 function requestPlay() {
   if (xDone()) startGame();
   else openTasks();
 }
+recordX();
+
 /* =========================================================
    Input: drag anywhere to steer (touch or mouse), keys on desktop
    ========================================================= */
