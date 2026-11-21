@@ -40,7 +40,7 @@ Canlı: https://move-cyan.vercel.app
 - Şüpheli skorları işaretler: **ROUND** (20,000 gibi tam yuvarlak skorlar) ve **TOO HIGH** (30,000 üstü, en yüksek hızda 8 dakikadan uzun kusursuz oyun ister). İşaretler ipucudur, kanıt değildir.
 - Tek tek veya toplu silme yapılır. Silme iki dokunuşla onaylanır, hemen ardından 10 saniye boyunca **UNDO** ile geri alınabilir. Silinen her kayıt (isim, skor, zaman) ayrıca `ntr:admin:deleted` listesinde saklanır.
 - İlk 1.500'ü CSV olarak indirir (WL listesi için).
-- **Live now** paneli: şu an oyun içinde olan oyuncuları (X kullanıcı adı, anlık skor, mesafe, ne kadar süredir oynadığı) gösterir, 10 saniyede bir yenilenir. Oyun, bir oyun sürerken her 30 saniyede `/api/live`'a sinyal gönderir. Her oyuncu dakikada 2 istek demektir; Vercel ve Upstash kullanım limitlerinde bunu hesaba kat.
+- **Live now** paneli: şu an oyun içinde olan oyuncuları (X kullanıcı adı, anlık skor, mesafe, ne kadar süredir oynadığı) gösterir, 10 saniyede bir yenilenir. Oyun, oynanan her 60 saniyede bir `/api/live`'a sinyal gönderir (duraklatılmışken göndermez, 1 dakikadan kısa oyunlarda hiç göndermez). Bir oyun bitince kayıt 150 saniyede kendiliğinden silinir.
 
 Şifre sunucuda kontrol edilir. Aynı IP'den 15 dakikada 10 yanlış denemeden sonra giriş 15 dakika kilitlenir. Kendi şifreni kullanmak için Vercel'de **Settings > Environment Variables** altına `ADMIN_PASSWORD` ekleyip yeniden yayınla. Bu değişken varsa koddaki yerleşik şifre devre dışı kalır.
 
@@ -62,6 +62,10 @@ vendor/             Three.js (sitenin kendisinden sunulur, dış CDN'e bağlı d
 ```
 
 Skor tablosu `ntr:` ile başlayan anahtarlarda tutulur. Eski Chroma Ring skorları veritabanında ayrı durur, yeni tabloya karışmaz.
+
+## İstek sayısı (Vercel limiti)
+
+Vercel Hobby planda aylık 1 milyon CDN isteği vardır; aşılınca proje durdurulur. İsteği düşük tutmak için: 3D motor (`/vendor`) ve ikonlar tarayıcıda uzun süre saklanır, oyun sırasında sadece oyun başına 1 oturum isteği ve oynanan her 60 saniyede 1 sinyal gider, skor ve sıralama sadece oyuncu isteyince çağrılır.
 
 ## Yayın
 
@@ -86,8 +90,8 @@ vercel dev
 
 - Her oyun sunucudan tek kullanımlık bir oturum anahtarı alır. Skor bu anahtar olmadan kabul edilmez.
 - Sunucu oyunun ne kadar sürdüğünü kendi saatiyle ölçer. Üst sınır oyunun kendi kurallarından hesaplanır (`lib/runcheck.js`): hız eğrisi (24 → 62 m/s), engel aralığı ve engel başına en fazla 85 bonus (yakın geçiş 25 + 4 ışık × 15). Bu sürede hiç mümkün olmayan skor reddedilir.
-- Oyun, oyun sürerken (duraklatılmışken de) 30 saniyede bir `/api/live`'a anahtarla birlikte o anki skoru gönderir; bunlar `ntr:cp:<anahtar>` listesinde tutulur. Skor gönderilince sunucu baştan sona bu zaman çizelgesine bakar: skor iki kontrol arasında mümkün olandan hızlı artmışsa ya da 2,5 dakikadan uzun sessizlik içinde büyük bir artış varsa reddeder.
-- Kabul edilen her en iyi skorun süresi, kontrol sayısı ve işaretleri `ntr:runs` içinde saklanır. Admin sayfası bunları gösterir ve şunları işaretler: FAST (koşunun süresine göre güçlü bir oyuncudan hızlı), NO CHECKS (2 dakikadan uzun koşuda hiç kontrol yok), GAP (2,5 dakikadan uzun kontrolsüz aralıkta büyük artış).
+- Oyun, oynanan her 60 saniyede bir `/api/live`'a anahtarla birlikte o anki skoru gönderir; bunlar `ntr:cp:<anahtar>` listesinde tutulur. Skor gönderilince sunucu baştan sona bu zaman çizelgesine bakar: skor iki kontrol arasında mümkün olandan hızlı artmışsa ya da 200 saniyeden uzun sessizlik içinde, o sürede oynanarak alınamayacak kadar büyük bir artış varsa reddeder.
+- Kabul edilen her en iyi skorun süresi, kontrol sayısı ve işaretleri `ntr:runs` içinde saklanır. Admin sayfası bunları gösterir ve şunları işaretler: FAST (koşunun süresine göre güçlü bir oyuncudan hızlı), NO CHECKS (2,5 dakikadan uzun koşuda hiç kontrol yok), GAP (200 saniyeden uzun kontrolsüz aralıkta büyük artış).
 - Aynı IP'den 3 saniyede en fazla 1 gönderim yapılabilir.
 
 Tarayıcıda çalışan hiçbir oyun tamamen hileye kapalı değildir: sinyalleri de taklit eden ve gerçek zamanda bekleyen bir bot hâlâ teorik sınıra kadar skor gönderebilir. Bunu tamamen kapatmanın yolu oyunu sunucuda tekrar oynatmaktır.

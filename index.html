@@ -1144,9 +1144,11 @@ function updateHud() {
 }
 
 /* =========================================================
-   Live heartbeat for the admin "Live now" panel (every 30 s during a run)
+   Heartbeat during a run (every 60 s of play, never while paused): feeds the admin
+   "Live now" panel and gives the server time:score checkpoints for the anti-cheat check.
+   Short runs (under a minute) send none, which keeps requests low.
    ========================================================= */
-const LIVE_EVERY = 30000;
+const LIVE_EVERY = 60000;
 let liveTimer = null, liveId = null;
 function liveBeat(end) {
   if (!liveId) return;
@@ -1158,15 +1160,14 @@ function liveBeat(end) {
 }
 function liveStart() {
   liveId = (Math.random().toString(36).slice(2, 12) + Date.now().toString(36)).slice(0, 24);
-  liveBeat(false);
   clearInterval(liveTimer);
-  // keeps beating while paused, so the run's timeline has no holes
-  liveTimer = setInterval(() => { if (S.state === 'playing') liveBeat(false); }, LIVE_EVERY);
+  liveTimer = setInterval(() => { if (S.state === 'playing' && !S.paused) liveBeat(false); }, LIVE_EVERY);
 }
 function liveStop() {
+  // no "ended" request: the live entry simply expires on the server
   clearInterval(liveTimer);
   liveTimer = null;
-  liveBeat(true);
+  liveId = null;
 }
 
 /* =========================================================
@@ -1210,7 +1211,7 @@ function startGame() {
   const run = S.runId;
   fetch('/api/session', { method: 'POST' })
     .then((r) => (r.ok ? r.json() : null))
-    .then((d) => { if (d && d.token && S.runId === run) { S.token = d.token; liveBeat(false); } })
+    .then((d) => { if (d && d.token && S.runId === run) S.token = d.token; })
     .catch(() => {});
   show(null);
   $('hud').classList.remove('hidden');

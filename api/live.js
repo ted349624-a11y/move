@@ -4,7 +4,7 @@ const ID_RE = /^[a-z0-9]{8,32}$/;
 const USER_RE = /^[A-Za-z0-9_]{1,15}$/;
 const TOKEN_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 const RUN_TTL = 2 * 60 * 60; // a run token lives 2 hours
-const TTL = 75; // seconds; the game sends a heartbeat every 30 s while a run is going
+const TTL = 150; // seconds; the game sends a heartbeat every 60 s of play
 const int = (v, max) => (Number.isInteger(v) && v >= 0 && v <= max ? v : 0);
 
 // Heartbeat from a running game: feeds the admin "Live now" panel and, with the run token,
