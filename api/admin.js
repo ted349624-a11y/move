@@ -63,7 +63,8 @@ export default async function handler(req, res) {
       const entries = [];
       for (let i = 0; i < raw.length; i += 2) entries.push({ name: String(raw[i]), score: Number(raw[i + 1]) });
       const wl = Number(await redis.hlen(KEYS.wl));
-      return res.status(200).json({ entries, total: Number(total), xusers: Number(xusers), wl, offset });
+      const airdrop = Number(await redis.hlen(KEYS.ad));
+      return res.status(200).json({ entries, total: Number(total), xusers: Number(xusers), wl, airdrop, offset });
     }
 
     if (body.action === 'live') {
@@ -85,8 +86,8 @@ export default async function handler(req, res) {
       return res.status(200).json({ count: players.length, players: players.slice(0, 200), now: Date.now() });
     }
 
-    if (body.action === 'wl') {
-      const all = (await redis.hgetall(KEYS.wl)) || {};
+    if (body.action === 'wl' || body.action === 'airdrop') {
+      const all = (await redis.hgetall(body.action === 'wl' ? KEYS.wl : KEYS.ad)) || {};
       const entries = [];
       for (const v of Object.values(all)) {
         try { const e = typeof v === 'string' ? JSON.parse(v) : v; entries.push({ username: String(e.username), wallet: String(e.wallet), at: String(e.at) }); } catch {}

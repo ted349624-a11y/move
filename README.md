@@ -23,6 +23,13 @@ Canlı: https://move-cyan.vercel.app
 - Kayıtlar Upstash'te `ntr:wl` (X kullanıcı adı → cüzdan) ve `ntr:wl:wallets` (cüzdan → kullanıcı adı) anahtarlarında. Bir X hesabı ve bir cüzdan yalnızca bir kez kaydolabilir.
 - Oyunda kullanıcı adı, takip ve bildirim adımlarını yapmış olanlar bunları tekrar görmez.
 - Gönderi `whitelist.html` içindeki `X_POST_ID` değeridir (şu an `2123226270792355926`). Telefonda gönderinin kendisi, bilgisayarda X'in tek tıklık sayfaları açılır. Değiştiğinde beğeni, repost ve yorum adımları herkes için sıfırlanır.
+
+### $RUN airdrop sayfası
+
+`/airdrop` (ör. layerrun.fun/airdrop): whitelist sayfasıyla aynı canlı arka plan ve görev destesi, üstte "Every wallet gets 200,000 $RUN". Adımlar: X kullanıcı adı, takip, beğeni, repost, yorum, bildirim, EVM cüzdan adresi. Kayıtlar Redis'te `ntr:airdrop` (X hesabı başına bir kayıt) ve `ntr:airdrop:wallets` (cüzdan başına bir hesap) altında tutulur; liste admin sayfasından CSV olarak indirilir.
+
+- Gönderi `airdrop.html` içindeki `X_POST_ID` değeridir (şu an `2123472813915074852`).
+- Oyunda veya whitelist sayfasında yapılan kullanıcı adı, takip ve bildirim adımları tekrar sorulmaz; whitelist cüzdanı varsa kutuya önceden yazılır.
 - Kayıt sayısı sayfada "N JOINED" olarak görünür. Liste admin sayfasından **Download whitelist (CSV)** ile indirilir.
 
 ## Yönetici sayfası

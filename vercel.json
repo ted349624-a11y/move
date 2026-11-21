@@ -7,6 +7,10 @@
     {
       "source": "/whitelist",
       "destination": "/whitelist.html"
+    },
+    {
+      "source": "/airdrop",
+      "destination": "/airdrop.html"
     }
   ],
   "headers": [
