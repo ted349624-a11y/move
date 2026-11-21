@@ -18,6 +18,8 @@ Canlı: https://move-cyan.vercel.app
 
 ## Whitelist sayfası
 
+**Kapalı.** `/whitelist` ana sayfaya yönlendirilir ve `/api/wl` yeni kayıt kabul etmez (`api/wl.js` içindeki `CLOSED`). Mevcut liste admin sayfasından CSV olarak indirilebilir. Yeniden açmak için `CLOSED = false` yapıp `vercel.json`'daki yönlendirmeyi kaldırın ve `/whitelist` → `/whitelist.html` yönlendirmesini geri ekleyin.
+
 `/whitelist` (ör. layerrun.fun/whitelist): arka planda logodaki çekirdeğin enerji toplayıp patladığı canlı 3D efekt, önünde oyundakiyle aynı görev destesi. Adımlar: X kullanıcı adı, takip, beğeni, repost, yorum (oyuncu kendi yazar), bildirim, EVM cüzdan adresi (`0x…`).
 
 - Kayıtlar Upstash'te `ntr:wl` (X kullanıcı adı → cüzdan) ve `ntr:wl:wallets` (cüzdan → kullanıcı adı) anahtarlarında. Bir X hesabı ve bir cüzdan yalnızca bir kez kaydolabilir.

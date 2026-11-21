@@ -21,6 +21,9 @@ export default async function handler(req, res) {
     res.setHeader('Allow', 'GET, POST');
     return res.status(405).json({ error: 'Method not allowed' });
   }
+  // The whitelist is closed: no new sign-ups. The list stays in Redis for the admin export.
+  const CLOSED = true;
+  if (CLOSED) return res.status(403).json({ error: 'The whitelist is closed.' });
 
   let body = req.body;
   if (typeof body === 'string') {
