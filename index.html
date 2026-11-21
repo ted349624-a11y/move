@@ -1152,7 +1152,7 @@ function liveBeat(end) {
   if (!liveId) return;
   const body = end
     ? { id: liveId, end: true }
-    : { id: liveId, user: (typeof XT !== 'undefined' && XT.user) || '', score: S.score, dist: Math.floor(S.dist), t: Math.round(S.gameTime) };
+    : { id: liveId, token: S.token || undefined, user: (typeof XT !== 'undefined' && XT.user) || '', score: S.score, dist: Math.floor(S.dist), t: Math.round(S.gameTime) };
   fetch('/api/live', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body), keepalive: true }).catch(() => {});
   if (end) liveId = null;
 }
@@ -1160,7 +1160,8 @@ function liveStart() {
   liveId = (Math.random().toString(36).slice(2, 12) + Date.now().toString(36)).slice(0, 24);
   liveBeat(false);
   clearInterval(liveTimer);
-  liveTimer = setInterval(() => { if (S.state === 'playing' && !S.paused) liveBeat(false); }, LIVE_EVERY);
+  // keeps beating while paused, so the run's timeline has no holes
+  liveTimer = setInterval(() => { if (S.state === 'playing') liveBeat(false); }, LIVE_EVERY);
 }
 function liveStop() {
   clearInterval(liveTimer);
@@ -1209,7 +1210,7 @@ function startGame() {
   const run = S.runId;
   fetch('/api/session', { method: 'POST' })
     .then((r) => (r.ok ? r.json() : null))
-    .then((d) => { if (d && d.token && S.runId === run) S.token = d.token; })
+    .then((d) => { if (d && d.token && S.runId === run) { S.token = d.token; liveBeat(false); } })
     .catch(() => {});
   show(null);
   $('hud').classList.remove('hidden');

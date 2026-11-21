@@ -73,6 +73,8 @@ input:focus{border-color:rgba(0,229,255,.6);box-shadow:0 0 0 3px rgba(0,229,255,
 .badge{display:inline-block;margin:4px 4px 0 0;padding:2px 7px;border-radius:6px;font-size:10px;font-weight:700;letter-spacing:.08em}
 .badge.round{background:rgba(255,176,32,.16);color:var(--amber)}
 .badge.high{background:rgba(255,77,109,.18);color:#ff8aa0}
+.badge.cheat{background:rgba(255,77,109,.18);color:#ff8aa0}
+.nm .meta{display:block;margin-top:3px;font-size:11px;color:var(--muted);font-variant-numeric:tabular-nums}
 .sc{font-family:'Unbounded',sans-serif;font-weight:600;font-size:14px;font-variant-numeric:tabular-nums}
 .del{background:transparent;border:1px solid rgba(255,77,109,.5);color:#ff8aa0;border-radius:999px;padding:8px 12px;font-weight:600;font-size:12px;cursor:pointer;min-width:74px}
 .del.armed{background:var(--red);color:#fff;border-color:var(--red)}
@@ -135,7 +137,7 @@ input:focus{border-color:rgba(0,229,255,.6);box-shadow:0 0 0 3px rgba(0,229,255,
       <button class="btn ghost" id="wlcsv" type="button">Download whitelist (CSV)</button>
       <button class="btn ghost" id="adcsv" type="button">Download airdrop (CSV)</button>
     </div>
-    <p class="legend"><span style="color:var(--amber)">ROUND</span> exact round score such as 20,000, typical of a score sent by hand. <span style="color:#ff8aa0">TOO HIGH</span> above 30,000, which takes 8+ minutes of flawless play at top speed. Flags are hints, not proof.</p>
+    <p class="legend"><span style="color:var(--amber)">ROUND</span> exact round score such as 20,000, typical of a score sent by hand. <span style="color:#ff8aa0">TOO HIGH</span> above 30,000, which takes 8+ minutes of flawless play at top speed. <span style="color:#ff8aa0">FAST</span> faster than strong human play for the run's length. <span style="color:#ff8aa0">NO CHECKS</span> a run over 2 minutes with no in-game check-ins. <span style="color:#ff8aa0">GAP</span> a big score rise with no check-ins for over 2.5 minutes. Runs that are impossible by the game's rules are refused outright. Older scores have no run details. Flags are hints, not proof.</p>
     <div class="list" id="list"></div>
     <button class="btn ghost more hidden" id="more" type="button">Load more</button>
   </section>
@@ -205,6 +207,7 @@ function flagsOf(e) {
   const f = [];
   if (ROUND(e.score)) f.push(['round', 'ROUND']);
   if (e.score > HIGH) f.push(['high', 'TOO HIGH']);
+  if (e.run && Array.isArray(e.run.flags)) e.run.flags.forEach((x) => f.push(['cheat', String(x)]));
   return f;
 }
 
@@ -227,6 +230,12 @@ function render() {
     const rk = document.createElement('div'); rk.className = 'rk'; rk.textContent = i + 1;
     const nm = document.createElement('div'); nm.className = 'nm';
     const n = document.createElement('span'); n.className = 'n'; n.textContent = e.name; nm.appendChild(n);
+    if (e.run) {
+      const m = document.createElement('span'); m.className = 'meta';
+      const sec = Math.max(1, Number(e.run.sec) || 0);
+      m.textContent = Math.floor(sec / 60) + ':' + String(sec % 60).padStart(2, '0') + ' run · ' + Math.round(e.score / sec) + ' pts/s · ' + (Number(e.run.cps) || 0) + ' checks';
+      nm.appendChild(m);
+    }
     flags.forEach(([cls, label]) => { const b = document.createElement('span'); b.className = 'badge ' + cls; b.textContent = label; nm.appendChild(b); });
     const sc = document.createElement('div'); sc.className = 'sc'; sc.textContent = fmt(e.score);
     const del = document.createElement('button');

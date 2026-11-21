@@ -85,7 +85,9 @@ vercel dev
 ## Hile koruması
 
 - Her oyun sunucudan tek kullanımlık bir oturum anahtarı alır. Skor bu anahtar olmadan kabul edilmez.
-- Sunucu oyunun ne kadar sürdüğünü kendi saatiyle ölçer ve o sürede ulaşılamayacak skorları reddeder.
+- Sunucu oyunun ne kadar sürdüğünü kendi saatiyle ölçer. Üst sınır oyunun kendi kurallarından hesaplanır (`lib/runcheck.js`): hız eğrisi (24 → 62 m/s), engel aralığı ve engel başına en fazla 85 bonus (yakın geçiş 25 + 4 ışık × 15). Bu sürede hiç mümkün olmayan skor reddedilir.
+- Oyun, oyun sürerken (duraklatılmışken de) 30 saniyede bir `/api/live`'a anahtarla birlikte o anki skoru gönderir; bunlar `ntr:cp:<anahtar>` listesinde tutulur. Skor gönderilince sunucu baştan sona bu zaman çizelgesine bakar: skor iki kontrol arasında mümkün olandan hızlı artmışsa ya da 2,5 dakikadan uzun sessizlik içinde büyük bir artış varsa reddeder.
+- Kabul edilen her en iyi skorun süresi, kontrol sayısı ve işaretleri `ntr:runs` içinde saklanır. Admin sayfası bunları gösterir ve şunları işaretler: FAST (koşunun süresine göre güçlü bir oyuncudan hızlı), NO CHECKS (2 dakikadan uzun koşuda hiç kontrol yok), GAP (2,5 dakikadan uzun kontrolsüz aralıkta büyük artış).
 - Aynı IP'den 3 saniyede en fazla 1 gönderim yapılabilir.
 
-Tarayıcıda çalışan hiçbir oyun tamamen hileye kapalı değildir, ama bu önlemler basit sahte istekleri engeller.
+Tarayıcıda çalışan hiçbir oyun tamamen hileye kapalı değildir: sinyalleri de taklit eden ve gerçek zamanda bekleyen bir bot hâlâ teorik sınıra kadar skor gönderebilir. Bunu tamamen kapatmanın yolu oyunu sunucuda tekrar oynatmaktır.

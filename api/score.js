@@ -1,11 +1,8 @@
 import { redis, KEYS, noDb } from '../lib/redis.js';
+import { checkRun } from '../lib/runcheck.js';
 
 const NAME_RE = /^[A-Za-z0-9 _.\-]{2,16}$/;
 const TOKEN_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
-// Score = metres travelled (top speed ~62 m/s) + near-miss and pickup bonuses.
-// Even a perfect run stays well under this rate, so anything above it is not real play.
-const MAX_POINTS_PER_SEC = 200;
-const GRACE_POINTS = 500;
 
 export default async function handler(req, res) {
   res.setHeader('Cache-Control', 'no-store');
@@ -49,8 +46,15 @@ export default async function handler(req, res) {
       return res.status(403).json({ error: 'This run has expired or was already submitted.' });
     }
 
-    const elapsed = (Date.now() - Number(startedAt)) / 1000;
-    if (!Number.isFinite(elapsed) || score > elapsed * MAX_POINTS_PER_SEC + GRACE_POINTS) {
+    // The heartbeats the game sent during this run (time:score), then forget them.
+    const p = redis.pipeline();
+    p.lrange(KEYS.cp(token), 0, 999);
+    p.del(KEYS.cp(token));
+    const [cpRaw] = await p.exec();
+    const now = Date.now();
+    const run = checkRun({ startedAt: Number(startedAt), now, score, checkpoints: Array.isArray(cpRaw) ? cpRaw : [] });
+    if (!run.ok) {
+      console.warn('score rejected', run.reason, name, score);
       return res.status(422).json({ error: 'Score could not be verified.' });
     }
 
@@ -61,6 +65,10 @@ export default async function handler(req, res) {
       redis.zscore(KEYS.board, name),
       redis.zcard(KEYS.board),
     ]);
+    // How this run went, kept for the admin page when it is the player's best.
+    if (Number(bestRaw) === score) {
+      await redis.hset(KEYS.runs, { [name]: JSON.stringify({ score, sec: Math.round(run.elapsed), cps: run.cps, gap: run.gap, flags: run.flags, at: now }) });
+    }
     const best = Number(bestRaw);
     const higher = await redis.zcount(KEYS.board, `(${best}`, '+inf');
 

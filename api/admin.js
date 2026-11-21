@@ -62,6 +62,16 @@ export default async function handler(req, res) {
       ]);
       const entries = [];
       for (let i = 0; i < raw.length; i += 2) entries.push({ name: String(raw[i]), score: Number(raw[i + 1]) });
+      // how each best run went (duration, checkpoints, flags), when it was recorded
+      if (entries.length) {
+        const names = entries.map((e) => e.name);
+        const runs = await redis.hmget(KEYS.runs, ...names);
+        const list = Array.isArray(runs) ? runs : names.map((n) => (runs ? runs[n] : null));
+        list.forEach((v, i) => {
+          if (v == null) return;
+          try { const r = typeof v === 'string' ? JSON.parse(v) : v; if (Number(r.score) === entries[i].score) entries[i].run = r; } catch {}
+        });
+      }
       const wl = Number(await redis.hlen(KEYS.wl));
       const airdrop = Number(await redis.hlen(KEYS.ad));
       return res.status(200).json({ entries, total: Number(total), xusers: Number(xusers), wl, airdrop, offset });
