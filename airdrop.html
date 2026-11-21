@@ -136,21 +136,12 @@ const TASKS = [
   { id: 'notify', icon: ICONS.bell, title: 'Turn on notifications', text: `Open the @${X_HANDLE} profile and tap the bell so you never miss an update.`, url: PROFILE },
   { id: 'wallet', icon: ICONS.wallet, title: 'Your wallet', text: 'Paste the EVM wallet address (0x…) that should receive your 200,000 $RUN.' },
 ];
-const KEY = 'lr_airdrop';
+// Bump the key to make everyone start the steps over.
+const KEY = 'lr_airdrop_v2';
+try { localStorage.removeItem('lr_airdrop'); } catch {}
 const W = (() => { try { return JSON.parse(store.get(KEY)) || {}; } catch { return {}; } })();
 W.done = Array.isArray(W.done) ? W.done : [];
 W.user = typeof W.user === 'string' ? W.user : '';
-// carry over what the player already did on the game or the whitelist (username, follow, notifications)
-for (const k of ['lr_wl', 'lr_xtasks']) {
-  try {
-    const prev = JSON.parse(store.get(k) || 'null');
-    if (prev && Array.isArray(prev.done)) {
-      if (!W.user && prev.user) W.user = prev.user;
-      if (!W.wallet && prev.wallet) W.prefill = prev.wallet;
-      ['user', 'follow', 'notify'].forEach((id) => { if (prev.done.includes(id) && !W.done.includes(id)) W.done.push(id); });
-    }
-  } catch {}
-}
 W.done = W.done.filter((id, i, a) => TASKS.some((t) => t.id === id) && a.indexOf(id) === i);
 if (!W.user) W.done = W.done.filter((id) => id !== 'user');
 const save = () => store.set(KEY, JSON.stringify(W));
@@ -200,7 +191,7 @@ function buildCard(i) {
       W.user = h; complete();
     });
   } else if (t.id === 'wallet') {
-    inputCard(card, '', '0x… wallet address', W.wallet || W.prefill || '', 'CLAIM 200,000 $RUN', async (v, err, btn) => {
+    inputCard(card, '', '0x… wallet address', W.wallet || '', 'CLAIM 200,000 $RUN', async (v, err, btn) => {
       const w = String(v || '').trim();
       if (!/^0x[a-fA-F0-9]{40}$/.test(w)) { err.textContent = 'Paste an EVM address: 0x followed by 40 characters.'; return; }
       err.textContent = ''; btn.disabled = true; btn.textContent = 'SAVING…';
