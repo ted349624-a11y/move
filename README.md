@@ -28,7 +28,7 @@ Canlı: https://move-cyan.vercel.app
 
 `/airdrop` (ör. layerrun.fun/airdrop): ortada görev destesi, arkada oyunun kendisi (`/?bg=1`: butonlar gizli, çekirdek tünelde kendi kendine oynar, renk bölgeleri değişir). Görev bitince "200,000 $RUN CLAIMED" kartı çıkar. Adımlar: X kullanıcı adı, takip, beğeni, repost, yorum, bildirim, EVM cüzdan adresi. Kayıtlar Redis'te `ntr:airdrop` (X hesabı başına bir kayıt) ve `ntr:airdrop:wallets` (cüzdan başına bir hesap) altında tutulur; liste admin sayfasından CSV olarak indirilir.
 
-- Gönderi `airdrop.html` içindeki `X_POST_ID` değeridir (şu an `2123472813915074852`).
+- Gönderi `airdrop.html` içindeki `X_POST_ID` değeridir (şu an `2124161154968613060`).
 - Herkes adımlara sıfırdan başlar; oyundan veya whitelist'ten hiçbir adım aktarılmaz. Herkesi yeniden başlatmak için `airdrop.html` içindeki `KEY` değerini değiştirin.
 - Kayıt sayısı sayfada "N JOINED" olarak görünür. Liste admin sayfasından **Download whitelist (CSV)** ile indirilir.
 
