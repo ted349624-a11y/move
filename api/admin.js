@@ -74,7 +74,8 @@ export default async function handler(req, res) {
       }
       const wl = Number(await redis.hlen(KEYS.wl));
       const airdrop = Number(await redis.hlen(KEYS.ad));
-      return res.status(200).json({ entries, total: Number(total), xusers: Number(xusers), wl, airdrop, offset });
+      const gtd = Number(await redis.hlen(KEYS.gtd));
+      return res.status(200).json({ entries, total: Number(total), xusers: Number(xusers), wl, airdrop, gtd, offset });
     }
 
     if (body.action === 'live') {
@@ -94,6 +95,39 @@ export default async function handler(req, res) {
       }
       players.sort((a, b) => b.score - a.score);
       return res.status(200).json({ count: players.length, players: players.slice(0, 200), now: Date.now() });
+    }
+
+    if (body.action === 'gtd') {
+      const [all, top] = await Promise.all([
+        redis.hgetall(KEYS.gtd),
+        redis.zrange(KEYS.board, 0, 1999, { rev: true, withScores: true }),
+      ]);
+      const pos = new Map();
+      for (let i = 0; i < top.length; i += 2) pos.set(String(top[i]), { rank: i / 2 + 1, score: Number(top[i + 1]) });
+      const raw = Array.isArray(all) ? Object.fromEntries(all.reduce((a, v, i) => (i % 2 ? (a[a.length - 1].push(v), a) : (a.push([v]), a)), [])) : (all || {});
+      const entries = [];
+      for (const v of Object.values(raw)) {
+        try {
+          const e = typeof v === 'string' ? JSON.parse(v) : v;
+          const p = pos.get(String(e.name)) || {};
+          entries.push({ rank: p.rank || null, name: String(e.name), score: p.score ?? null, wallet: String(e.wallet), verified: Boolean(e.verified), at: String(e.at) });
+        } catch {}
+      }
+      entries.sort((a, b) => (a.rank || 1e9) - (b.rank || 1e9));
+      return res.status(200).json({ count: entries.length, entries });
+    }
+
+    if (body.action === 'gtdDelete') {
+      const name = typeof body.name === 'string' ? body.name : '';
+      const v = await redis.hget(KEYS.gtd, name);
+      if (!v) return res.status(404).json({ error: 'No GTD wallet for that name.' });
+      let e = {}; try { e = typeof v === 'string' ? JSON.parse(v) : v; } catch {}
+      const p = redis.pipeline();
+      p.hdel(KEYS.gtd, name);
+      if (e.wallet) p.hdel(KEYS.gtdWallets, String(e.wallet).toLowerCase());
+      if (body.unprotect) p.hdel(KEYS.owner, name);
+      await p.exec();
+      return res.status(200).json({ ok: true });
     }
 
     if (body.action === 'wl' || body.action === 'airdrop') {

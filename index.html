@@ -165,6 +165,11 @@ input:focus{border-color:rgba(0,229,255,.7);box-shadow:0 0 0 4px rgba(0,229,255,
 /* One-time X tasks: a deck where each new task lands on top of the finished one */
 .tasks-panel{padding:28px 22px 22px}
 .tasks-close{position:absolute;top:14px;right:14px}
+.gtd-panel{position:relative;padding:28px 22px 22px}
+.gtd-text{margin:12px 4px 18px;font-size:14px;line-height:1.55;color:#b9c4dd}
+.gtd-text b{color:#fff}
+#gtdWallet{font-size:clamp(12px,3.4vw,15px);letter-spacing:0;padding-left:12px;padding-right:12px}
+#btnGtd2{width:100%;margin-top:4px}
 .tprog{height:4px;border-radius:4px;background:rgba(255,255,255,.1);margin:18px 0 10px;overflow:hidden}
 .tbar{height:100%;width:0;border-radius:4px;background:linear-gradient(90deg,var(--cyan),var(--magenta));box-shadow:0 0 12px rgba(0,229,255,.6);transition:width .5s ease}
 .tstep{font-size:11px;font-weight:600;letter-spacing:.3em;color:var(--muted)}
@@ -237,6 +242,7 @@ html.bg #c{pointer-events:none}
   <div class="menu-bottom">
     <button class="btn primary" id="btnPlay">PLAY</button>
     <button class="btn" id="btnBoard">LEADERBOARD</button>
+    <button class="btn" id="btnGtd">GTD · TOP 400</button>
   </div>
 </section>
 
@@ -250,6 +256,7 @@ html.bg #c{pointer-events:none}
       <button class="btn primary" id="btnSubmit" type="submit">SUBMIT SCORE</button>
     </form>
     <div class="status" id="submitStatus"></div>
+    <button class="btn primary hidden" id="btnGtd2" type="button">CLAIM YOUR GTD</button>
     <div class="row">
       <button class="btn" id="btnAgain">PLAY AGAIN</button>
       <button class="btn" id="btnBoard2">RANKINGS</button>
@@ -276,6 +283,21 @@ html.bg #c{pointer-events:none}
     </div>
     <div class="board-list" id="boardList"></div>
     <div class="board-foot" id="boardFoot"></div>
+  </div>
+</section>
+
+<section id="gtd" class="screen hidden">
+  <div class="panel gtd-panel">
+    <button class="icon-btn tasks-close" id="btnGtdClose" aria-label="Close"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+    <div class="kicker">TOP 400</div>
+    <h2>GTD WALLET</h2>
+    <p class="gtd-text">The <b>top 400</b> on the leaderboard get a <b>GTD</b> spot. Enter the name you play with and the EVM wallet (0x…) for it.</p>
+    <form id="gtdForm" autocomplete="off">
+      <input id="gtdName" maxlength="16" placeholder="Your player name" spellcheck="false" autocapitalize="off" aria-label="Player name">
+      <input id="gtdWallet" maxlength="42" placeholder="0x… wallet address" spellcheck="false" autocapitalize="off" aria-label="EVM wallet address">
+      <button class="btn primary" id="btnGtdSave" type="submit">SAVE WALLET</button>
+    </form>
+    <div class="status" id="gtdStatus"></div>
   </div>
 </section>
 
@@ -1173,7 +1195,7 @@ function liveStop() {
 /* =========================================================
    Screens & flow
    ========================================================= */
-const screens = ['menu', 'over', 'board', 'paused', 'tasks'];
+const screens = ['menu', 'over', 'board', 'paused', 'tasks', 'gtd'];
 function show(id) { screens.forEach((s) => $(s).classList.toggle('hidden', s !== id)); }
 let boardReturn = 'menu';
 
@@ -1242,6 +1264,7 @@ function showOver() {
   btn.disabled = S.score < 1;
   btn.textContent = 'SUBMIT SCORE';
   setStatus(S.score < 1 ? 'Score at least 1 point to enter the rankings.' : '', '');
+  $('btnGtd2').classList.add('hidden');
   show('over');
 }
 
@@ -1280,7 +1303,9 @@ async function submitScore(e) {
     S.submitted = true;
     btn.textContent = 'SUBMITTED';
     const extra = d.best > S.score ? ` · Your best: ${d.best.toLocaleString('en-US')}` : '';
-    setStatus(`You are #${d.rank} of ${d.total} players${extra}`, 'ok');
+    if (d.key) gtdKeys.set(name, d.key);
+    setStatus(`You are #${d.rank} of ${d.total} players${extra}` + (d.rank <= GTD_TOP ? ' · Top 400: claim your GTD' : ''), 'ok');
+    $('btnGtd2').classList.toggle('hidden', d.rank > GTD_TOP);
     sfx.zone();
   } catch (err) {
     setStatus(err.message || 'Network error. Try again.', 'err');
@@ -1318,6 +1343,52 @@ async function openBoard(from) {
   }
 }
 function closeBoard() { show(boardReturn); }
+
+/* =========================================================
+   GTD wallet: the top 400 on the leaderboard save an EVM wallet
+   ========================================================= */
+const GTD_TOP = 400;
+const jsonStore = (key) => ({
+  all() { try { return JSON.parse(store.get(key)) || {}; } catch { return {}; } },
+  get(n) { return this.all()[n] || ''; },
+  set(n, v) { const a = this.all(); a[n] = v; store.set(key, JSON.stringify(a)); },
+});
+const gtdKeys = jsonStore('lr_keys');      // name -> key that proves this device owns the name
+const gtdWallets = jsonStore('lr_gtd');    // name -> wallet saved from this device
+let gtdReturn = 'menu';
+function gtdSaved(name) {
+  const w = gtdWallets.get(name);
+  return w ? `Saved for ${name}: ${w.slice(0, 6)}…${w.slice(-4)}. You can change it here.` : '';
+}
+function openGtd(from) {
+  gtdReturn = from;
+  const name = (from === 'over' && $('name').value.trim()) || store.get('ntr_name') || '';
+  $('gtdName').value = name;
+  $('gtdWallet').value = gtdWallets.get(name);
+  const st = $('gtdStatus'); st.textContent = gtdSaved(name); st.className = 'status' + (st.textContent ? ' ok' : '');
+  show('gtd');
+}
+async function saveGtd(e) {
+  e.preventDefault();
+  const name = $('gtdName').value.trim().replace(/\s+/g, ' ');
+  const wallet = $('gtdWallet').value.trim();
+  const st = $('gtdStatus');
+  const say = (t, c) => { st.textContent = t; st.className = 'status' + (c ? ' ' + c : ''); };
+  if (!/^[A-Za-z0-9 _.\-]{2,16}$/.test(name)) { say('Enter the name you play with (2-16 characters).', 'err'); return; }
+  if (!/^0x[a-fA-F0-9]{40}$/.test(wallet)) { say('Paste an EVM address: 0x followed by 40 characters.', 'err'); return; }
+  const btn = $('btnGtdSave');
+  btn.disabled = true; say('Saving...', '');
+  try {
+    const r = await fetch('/api/gtd', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name, wallet, key: gtdKeys.get(name) || undefined }) });
+    const d = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error(d.error || 'Could not save. Try again.');
+    if (d.key) gtdKeys.set(name, d.key);
+    gtdWallets.set(name, wallet);
+    say(`GTD locked: ${name} is #${d.rank} · ${wallet.slice(0, 6)}…${wallet.slice(-4)}`, 'ok');
+    sfx.zone();
+  } catch (err) { say(err.message || 'Network error. Try again.', 'err'); }
+  finally { btn.disabled = false; }
+}
 
 /* =========================================================
    Pick a username before the first run (shown on the leaderboard)
@@ -1499,11 +1570,12 @@ addEventListener('keydown', (e) => {
   if (S.state === 'playing') {
     if (k === 'Escape' || k === 'p' || k === 'P') setPaused(!S.paused);
     else if (S.paused && (k === ' ' || k === 'Enter')) setPaused(false);
-  } else if ((k === ' ' || k === 'Enter') && (S.state === 'menu' || S.state === 'over') && $('board').classList.contains('hidden') && $('tasks').classList.contains('hidden')) {
+  } else if ((k === ' ' || k === 'Enter') && (S.state === 'menu' || S.state === 'over') && $('board').classList.contains('hidden') && $('tasks').classList.contains('hidden') && $('gtd').classList.contains('hidden')) {
     e.preventDefault();
     requestPlay();
   } else if (k === 'Escape' && !$('board').classList.contains('hidden')) closeBoard();
   else if (k === 'Escape' && !$('tasks').classList.contains('hidden')) show('menu');
+  else if (k === 'Escape' && !$('gtd').classList.contains('hidden')) show(gtdReturn);
 });
 addEventListener('keyup', (e) => { if (KEYMAP[e.key]) keys[KEYMAP[e.key]] = false; });
 addEventListener('blur', () => { keys.left = keys.right = keys.up = keys.down = false; });
@@ -1513,6 +1585,10 @@ const click = (id, fn) => $(id).addEventListener('click', (e) => { initAudio(); 
 click('btnPlay', requestPlay);
 click('btnAgain', requestPlay);
 click('btnTasksClose', () => show('menu'));
+click('btnGtd', () => openGtd('menu'));
+click('btnGtd2', () => openGtd('over'));
+click('btnGtdClose', () => show(gtdReturn));
+$('gtdForm').addEventListener('submit', saveGtd);
 click('btnBoard', () => openBoard('menu'));
 click('btnBoard2', () => openBoard('over'));
 click('btnCloseBoard', closeBoard);

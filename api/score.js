@@ -1,4 +1,5 @@
 import { redis, KEYS, noDb } from '../lib/redis.js';
+import { createHash, randomUUID } from 'node:crypto';
 import { checkRun } from '../lib/runcheck.js';
 
 const NAME_RE = /^[A-Za-z0-9 _.\-]{2,16}$/;
@@ -66,8 +67,12 @@ export default async function handler(req, res) {
       redis.zcard(KEYS.board),
     ]);
     // How this run went, kept for the admin page when it is the player's best.
+    // Setting a best score also protects the name for this device (used for the GTD wallet).
+    let key;
     if (Number(bestRaw) === score) {
       await redis.hset(KEYS.runs, { [name]: JSON.stringify({ score, sec: Math.round(run.elapsed), cps: run.cps, gap: run.gap, flags: run.flags, at: now }) });
+      const k = randomUUID();
+      if (await redis.hsetnx(KEYS.owner, name, createHash('sha256').update(k).digest('hex'))) key = k;
     }
     const best = Number(bestRaw);
     const higher = await redis.zcount(KEYS.board, `(${best}`, '+inf');
@@ -79,6 +84,7 @@ export default async function handler(req, res) {
       best,
       rank: Number(higher) + 1,
       total: Number(totalRaw),
+      key,
     });
   } catch (err) {
     console.error('score error', err);
