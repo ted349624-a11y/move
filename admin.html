@@ -149,7 +149,7 @@ input:focus{border-color:rgba(0,229,255,.6);box-shadow:0 0 0 3px rgba(0,229,255,
       <button class="btn ghost" id="adcsv" type="button">Download airdrop (CSV)</button>
       <button class="btn ghost" id="gtdcsv" type="button">Download GTD (CSV)</button>
     </div>
-    <label class="wonly"><input type="checkbox" id="walletsOnly"> CSV downloads: wallet addresses only (one per line)</label>
+    <label class="wonly"><input type="checkbox" id="walletsOnly" checked> CSV downloads: wallet addresses only (one per line)</label>
     <div class="merge">
       <h3>Merge lists into one CSV</h3>
       <div class="opts">
@@ -426,8 +426,7 @@ $('wlreset').addEventListener('click', async () => {
   } catch (e) { if (e.message !== 'auth') showToast(e.message, false); }
 });
 
-// Merge: every wallet once (case-insensitive), with the lists it came from. With "wallet addresses
-// only" ticked the file is just the wallets, one per line.
+// Merge: every wallet once (case-insensitive), one per line, nothing else.
 $('mergecsv').addEventListener('click', async () => {
   const picked = [['mWl', 'wl', 'whitelist'], ['mAd', 'airdrop', 'airdrop'], ['mGtd', 'gtd', 'gtd']].filter(([id]) => $(id).checked);
   const files = [...($('mFiles').files || [])];
@@ -453,10 +452,8 @@ $('mergecsv').addEventListener('click', async () => {
     const rows = [...map.values()];
     const label = picked.map((x) => x[2]).concat(files.length ? ['files'] : []).join('+');
     const day = new Date().toISOString().slice(0, 10);
-    const q = (v) => '"' + String(v ?? '').replace(/"/g, '""') + '"';
-    if ($('walletsOnly').checked) downloadCsv('layer-run-merged-' + label + '-wallets-' + rows.length + '-' + day + '.csv', rows.map((r) => r.wallet));
-    else downloadCsv('layer-run-merged-' + label + '-' + rows.length + '-' + day + '.csv',
-      ['wallet,sources,names'].concat(rows.map((r) => [q(r.wallet), q([...r.sources].join(' + ')), q([...r.names].join(' + '))].join(','))));
+    // the merged file is always just the wallets, one per line
+    downloadCsv('layer-run-merged-' + label + '-wallets-' + rows.length + '-' + day + '.csv', rows.map((r) => r.wallet));
     showToast('Merged ' + fmt(rows.length) + ' unique wallets', false);
   } catch (e) { if (e.message !== 'auth') showToast(e.message, false); }
 });
