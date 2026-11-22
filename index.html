@@ -242,7 +242,7 @@ html.bg #c{pointer-events:none}
   <div class="menu-bottom">
     <button class="btn primary" id="btnPlay">PLAY</button>
     <button class="btn" id="btnBoard">LEADERBOARD</button>
-    <button class="btn" id="btnGtd">GTD · TOP 400</button>
+    <button class="btn hidden" id="btnGtd">GTD · TOP 400</button>
   </div>
 </section>
 
@@ -1216,6 +1216,7 @@ function goMenu() {
   engineStop();
   resetPalette();
   show('menu');
+  if (typeof refreshGtdRank === 'function' && !document.documentElement.classList.contains('bg')) refreshGtdRank();
 }
 
 function startGame() {
@@ -1304,6 +1305,7 @@ async function submitScore(e) {
     btn.textContent = 'SUBMITTED';
     const extra = d.best > S.score ? ` · Your best: ${d.best.toLocaleString('en-US')}` : '';
     if (d.key) gtdKeys.set(name, d.key);
+    gtdRank.save(name, d.rank);
     setStatus(`You are #${d.rank} of ${d.total} players${extra}` + (d.rank <= GTD_TOP ? ' · Top 400: claim your GTD' : ''), 'ok');
     $('btnGtd2').classList.toggle('hidden', d.rank > GTD_TOP);
     sfx.zone();
@@ -1355,6 +1357,30 @@ const jsonStore = (key) => ({
 });
 const gtdKeys = jsonStore('lr_keys');      // name -> key that proves this device owns the name
 const gtdWallets = jsonStore('lr_gtd');    // name -> wallet saved from this device
+// Only the top 400 see the GTD button. The player's rank is asked for at most every 6 hours,
+// and updated straight away whenever they submit a score.
+const gtdRank = {
+  KEY: 'lr_rank', TTL: 6 * 3600 * 1000,
+  read() { try { return JSON.parse(store.get(this.KEY)) || {}; } catch { return {}; } },
+  save(name, rank) { store.set(this.KEY, JSON.stringify({ name, rank, at: Date.now() })); updateGtdButton(); },
+};
+function updateGtdButton() {
+  const name = store.get('ntr_name') || '';
+  const c = gtdRank.read();
+  const show = Boolean(name) && c.name === name && Number(c.rank) >= 1 && Number(c.rank) <= GTD_TOP;
+  $('btnGtd').classList.toggle('hidden', !show);
+}
+function refreshGtdRank() {
+  const name = store.get('ntr_name') || '';
+  updateGtdButton();
+  if (!/^[A-Za-z0-9 _.\-]{2,16}$/.test(name)) return;
+  const c = gtdRank.read();
+  if (c.name === name && Date.now() - Number(c.at || 0) < gtdRank.TTL) return;
+  fetch('/api/gtd?name=' + encodeURIComponent(name))
+    .then((r) => (r.ok ? r.json() : null))
+    .then((d) => { if (d) gtdRank.save(name, d.rank); })
+    .catch(() => {});
+}
 let gtdReturn = 'menu';
 function gtdSaved(name) {
   const w = gtdWallets.get(name);

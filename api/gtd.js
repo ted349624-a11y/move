@@ -7,16 +7,35 @@ const EVM_RE = /^0x[a-fA-F0-9]{40}$/;
 const KEY_RE = /^[0-9a-f-]{36}$/;
 const hash = (k) => createHash('sha256').update(String(k)).digest('hex');
 
+// GET ?name=: the name's leaderboard rank and whether it has a GTD wallet (the game shows
+// the GTD button only to the top 400). Cached briefly at the edge.
 // POST { name, wallet, key? }: save the EVM wallet for a player name in the top 400 (GTD spot).
 // A name is protected by a key that only the device holding it knows: the device that set the
 // name's best score (issued by /api/score), or the device that first saved a wallet for it.
 export default async function handler(req, res) {
+  if (!redis) return noDb(res);
+  if (req.method === 'GET') {
+    const q = new URL(req.url, 'http://x').searchParams;
+    const name = String(q.get('name') || '').trim().replace(/\s+/g, ' ');
+    if (!NAME_RE.test(name)) return res.status(400).json({ error: 'Invalid name.' });
+    try {
+      const p = redis.pipeline();
+      p.zrevrank(KEYS.board, name);
+      p.hexists(KEYS.gtd, name);
+      const [r, has] = await p.exec();
+      res.setHeader('Cache-Control', 'public, max-age=0, s-maxage=300');
+      const rank = r === null || r === undefined ? null : Number(r) + 1;
+      return res.status(200).json({ rank, top: GTD_TOP, eligible: rank !== null && rank <= GTD_TOP, claimed: Boolean(Number(has)) });
+    } catch (err) {
+      console.error('gtd rank error', err);
+      return res.status(500).json({ error: 'Server error.' });
+    }
+  }
   res.setHeader('Cache-Control', 'no-store');
   if (req.method !== 'POST') {
-    res.setHeader('Allow', 'POST');
+    res.setHeader('Allow', 'GET, POST');
     return res.status(405).json({ error: 'Method not allowed' });
   }
-  if (!redis) return noDb(res);
 
   let body = req.body;
   if (typeof body === 'string') {
