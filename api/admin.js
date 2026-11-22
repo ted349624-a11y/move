@@ -117,6 +117,17 @@ export default async function handler(req, res) {
       return res.status(200).json({ count: entries.length, entries });
     }
 
+    // Empty the whitelist. The old list is kept under a dated backup key, not lost.
+    if (body.action === 'wlReset') {
+      const [n, nw] = await Promise.all([redis.hlen(KEYS.wl), redis.hlen(KEYS.wlWallets)]);
+      const stamp = new Date().toISOString().replace(/[:.]/g, '-');
+      const p = redis.pipeline();
+      if (Number(n)) p.rename(KEYS.wl, `${KEYS.wl}:backup:${stamp}`);
+      if (Number(nw)) p.rename(KEYS.wlWallets, `${KEYS.wlWallets}:backup:${stamp}`);
+      if (Number(n) || Number(nw)) await p.exec();
+      return res.status(200).json({ ok: true, cleared: Number(n), backup: `${KEYS.wl}:backup:${stamp}` });
+    }
+
     if (body.action === 'gtdDelete') {
       const name = typeof body.name === 'string' ? body.name : '';
       const v = await redis.hget(KEYS.gtd, name);

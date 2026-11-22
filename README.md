@@ -18,6 +18,8 @@ Canlı: https://move-cyan.vercel.app
 
 ## Whitelist sayfası
 
+Admin sayfasındaki **Reset whitelist** (iki dokunuş) listeyi boşaltır; eski liste silinmez, `ntr:wl:backup:<tarih>` anahtarına taşınır.
+
 Herkes adımlara sıfırdan başlar (oyundan adım aktarılmaz). Herkesi yeniden başlatmak için `whitelist.html` içindeki `KEY` değerini değiştirin; kapatmak için `api/wl.js` içinde `CLOSED = true` yapıp `/whitelist` yönlendirmesini kaldırın.
 
 

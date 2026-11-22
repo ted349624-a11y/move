@@ -136,6 +136,7 @@ input:focus{border-color:rgba(0,229,255,.6);box-shadow:0 0 0 3px rgba(0,229,255,
       <button class="btn ghost" id="refresh" type="button">Refresh</button>
       <button class="btn ghost" id="csv" type="button">Download top 1,500 (CSV)</button>
       <button class="btn ghost" id="wlcsv" type="button">Download whitelist (CSV)</button>
+      <button class="btn ghost" id="wlreset" type="button">Reset whitelist</button>
       <button class="btn ghost" id="adcsv" type="button">Download airdrop (CSV)</button>
       <button class="btn ghost" id="gtdcsv" type="button">Download GTD (CSV)</button>
     </div>
@@ -374,6 +375,23 @@ $('gtdcsv').addEventListener('click', async () => {
     downloadCsv('layer-run-gtd-' + d.count + '-' + new Date().toISOString().slice(0, 10) + '.csv',
       ['rank,name,score,wallet,verified,saved_at'].concat(d.entries.map((e) => [e.rank || '', q(e.name), e.score ?? '', q(e.wallet), e.verified ? 'yes' : 'no', q(e.at)].join(','))));
     showToast('Downloaded ' + fmt(d.count) + ' GTD wallets', false);
+  } catch (e) { if (e.message !== 'auth') showToast(e.message, false); }
+});
+
+let wlResetTimer = null;
+$('wlreset').addEventListener('click', async () => {
+  const b = $('wlreset');
+  if (!b.classList.contains('danger')) {
+    b.classList.add('danger'); b.textContent = 'Tap again to empty the whitelist';
+    wlResetTimer = setTimeout(() => { b.classList.remove('danger'); b.textContent = 'Reset whitelist'; }, 4000);
+    return;
+  }
+  clearTimeout(wlResetTimer);
+  b.classList.remove('danger'); b.textContent = 'Reset whitelist';
+  try {
+    const d = await api('wlReset');
+    $('statWl').textContent = '0';
+    showToast('Whitelist emptied (' + fmt(d.cleared) + ' entries moved to a backup)', false);
   } catch (e) { if (e.message !== 'auth') showToast(e.message, false); }
 });
 
