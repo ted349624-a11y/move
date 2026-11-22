@@ -45,6 +45,9 @@ Başkasının ismiyle cüzdan girilmesine karşı: bir isim için en iyi skoru g
 
 ## Yönetici sayfası
 
+- CSV indirmelerinin altındaki **wallet addresses only** kutusu işaretliyse whitelist, airdrop, GTD ve birleştirilmiş dosyalar sadece cüzdan adresleriyle iner (her satırda bir adres, başlık yok).
+- **Merge lists into one CSV**: whitelist, airdrop ve GTD listelerinden istenenler seçilir, istenirse kendi CSV/TXT dosyaların eklenir (içindeki tüm `0x…` adresleri alınır). Her cüzdan bir kez yazılır; tam modda hangi listelerden geldiği ve isimleri de yazılır.
+
 `/admin` adresi (ör. layerrun.fun/admin) şifreyle açılan bir yönetici sayfasıdır. Oyunda hiçbir yerden link verilmez, arama motorlarına kapalıdır.
 
 - Skor tablosunu listeler, isimle arama yapılır.
