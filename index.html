@@ -1357,10 +1357,10 @@ const jsonStore = (key) => ({
 });
 const gtdKeys = jsonStore('lr_keys');      // name -> key that proves this device owns the name
 const gtdWallets = jsonStore('lr_gtd');    // name -> wallet saved from this device
-// Only the top 400 see the GTD button. The player's rank is asked for at most every 6 hours,
+// Only the top 400 see the GTD button. The player's rank is asked for at most every 10 minutes,
 // and updated straight away whenever they submit a score.
 const gtdRank = {
-  KEY: 'lr_rank', TTL: 6 * 3600 * 1000,
+  KEY: 'lr_rank', TTL: 10 * 60 * 1000,
   read() { try { return JSON.parse(store.get(this.KEY)) || {}; } catch { return {}; } },
   save(name, rank) { store.set(this.KEY, JSON.stringify({ name, rank, at: Date.now() })); updateGtdButton(); },
 };
