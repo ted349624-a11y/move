@@ -37,9 +37,9 @@ Herkes adımlara sıfırdan başlar (oyundan adım aktarılmaz). Herkesi yeniden
 - Herkes adımlara sıfırdan başlar; oyundan veya whitelist'ten hiçbir adım aktarılmaz. Herkesi yeniden başlatmak için `airdrop.html` içindeki `KEY` değerini değiştirin.
 - Kayıt sayısı sayfada "N JOINED" olarak görünür. Liste admin sayfasından **Download whitelist (CSV)** ile indirilir.
 
-## GTD cüzdanı (ilk 400)
+## GTD cüzdanı (ilk 1.000)
 
-Menüdeki **GTD · TOP 400** butonu sadece ilk 400'deki oyunculara görünür: oyun, cihazdaki oyuncu isminin sırasını `GET /api/gtd?name=` ile en fazla 10 dakikada bir sorar ve her skor gönderiminde günceller. Bu buton (ve skor gönderdikten sonra ilk 400'deyse oyun sonu ekranındaki **CLAIM YOUR GTD**) bir ekran açar: oyuncu ismini ve EVM cüzdanını (`0x…`) girer. `/api/gtd` ismin sıralamada ilk 400'de olduğunu kontrol eder ve `ntr:gtd` (isim → cüzdan) ile `ntr:gtd:wallets` (cüzdan başına tek isim) içine kaydeder. Liste admin sayfasından **Download GTD (CSV)** ile indirilir: sıra, isim, skor, cüzdan, doğrulandı mı, tarih.
+Menüdeki **GTD · TOP 1000** butonu sadece ilk 1.000'deki oyunculara görünür: oyun, cihazdaki oyuncu isminin sırasını `GET /api/gtd?name=` ile en fazla 10 dakikada bir sorar ve her skor gönderiminde günceller. Bu buton (ve skor gönderdikten sonra ilk 1.000'deyse oyun sonu ekranındaki **CLAIM YOUR GTD**) bir ekran açar: oyuncu ismini ve EVM cüzdanını (`0x…`) girer. `/api/gtd` ismin sıralamada ilk 1.000'de olduğunu kontrol eder ve `ntr:gtd` (isim → cüzdan) ile `ntr:gtd:wallets` (cüzdan başına tek isim) içine kaydeder. Liste admin sayfasından **Download GTD (CSV)** ile indirilir: sıra, isim, skor, cüzdan, doğrulandı mı, tarih.
 
 Başkasının ismiyle cüzdan girilmesine karşı: bir isim için en iyi skoru gönderen cihaza gizli bir anahtar verilir (`ntr:owner`) ve o isim için cüzdanı sadece o cihaz kaydedebilir ("verified: yes"). Bu özellikten önce gelmiş skorların anahtarı yoktur; onlarda ilk cüzdanı kaydeden cihaz ismi sahiplenir ("verified: no"). Kaydedilen cüzdanı sadece kaydeden cihaz değiştirebilir. Bir anlaşmazlıkta admin API'deki `gtdDelete` işlemi kaydı siler.
 

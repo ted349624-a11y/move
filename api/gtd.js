@@ -1,15 +1,15 @@
 import { createHash, randomUUID } from 'node:crypto';
 import { redis, KEYS, noDb } from '../lib/redis.js';
 
-export const GTD_TOP = 400;
+export const GTD_TOP = 1000;
 const NAME_RE = /^[A-Za-z0-9 _.\-]{2,16}$/;
 const EVM_RE = /^0x[a-fA-F0-9]{40}$/;
 const KEY_RE = /^[0-9a-f-]{36}$/;
 const hash = (k) => createHash('sha256').update(String(k)).digest('hex');
 
 // GET ?name=: the name's leaderboard rank and whether it has a GTD wallet (the game shows
-// the GTD button only to the top 400). Cached briefly at the edge.
-// POST { name, wallet, key? }: save the EVM wallet for a player name in the top 400 (GTD spot).
+// the GTD button only to the top 1,000). Cached briefly at the edge.
+// POST { name, wallet, key? }: save the EVM wallet for a player name in the top 1,000 (GTD spot).
 // A name is protected by a key that only the device holding it knows: the device that set the
 // name's best score (issued by /api/score), or the device that first saved a wallet for it.
 export default async function handler(req, res) {
@@ -62,7 +62,7 @@ export default async function handler(req, res) {
 
     if (rankRaw === null || rankRaw === undefined) return res.status(404).json({ error: 'No score found for this name. Use the exact name from the leaderboard.' });
     const rank = Number(rankRaw) + 1;
-    if (rank > GTD_TOP) return res.status(403).json({ error: `Only the top ${GTD_TOP} get a GTD spot. ${name} is #${rank.toLocaleString('en-US')}.` });
+    if (rank > GTD_TOP) return res.status(403).json({ error: `Only the top ${GTD_TOP.toLocaleString('en-US')} get a GTD spot. ${name} is #${rank.toLocaleString('en-US')}.` });
 
     const keyHash = key ? hash(key) : '';
     let claim = null;
