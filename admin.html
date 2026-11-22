@@ -59,6 +59,8 @@ input:focus{border-color:rgba(0,229,255,.6);box-shadow:0 0 0 3px rgba(0,229,255,
 .chip{background:transparent;border:1px solid var(--line);color:var(--muted);border-radius:999px;padding:10px 14px;font-weight:600;font-size:13px;cursor:pointer}
 .chip.on{background:rgba(0,229,255,.12);border-color:rgba(0,229,255,.5);color:#dff9ff}
 .actions{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px}
+.wonly{display:inline-flex;align-items:center;gap:8px;margin:0 0 12px;font-size:13px;color:var(--muted);cursor:pointer}
+.wonly input{width:16px;height:16px;accent-color:#3dff8a}
 .legend{font-size:12px;line-height:1.6;color:var(--muted);margin:4px 2px 14px}
 .legend span{font-weight:700}
 .list{display:flex;flex-direction:column;gap:6px}
@@ -140,6 +142,7 @@ input:focus{border-color:rgba(0,229,255,.6);box-shadow:0 0 0 3px rgba(0,229,255,
       <button class="btn ghost" id="adcsv" type="button">Download airdrop (CSV)</button>
       <button class="btn ghost" id="gtdcsv" type="button">Download GTD (CSV)</button>
     </div>
+    <label class="wonly"><input type="checkbox" id="walletsOnly"> CSV downloads: wallet addresses only (one per line)</label>
     <p class="legend"><span style="color:var(--amber)">ROUND</span> exact round score such as 20,000, typical of a score sent by hand. <span style="color:#ff8aa0">TOO HIGH</span> above 30,000, which takes 8+ minutes of flawless play at top speed. <span style="color:#ff8aa0">FAST</span> faster than strong human play for the run's length. <span style="color:#ff8aa0">NO CHECKS</span> a run over 2.5 minutes with no in-game check-ins. <span style="color:#ff8aa0">GAP</span> a big score rise with no check-ins for over 3 minutes. Runs that are impossible by the game's rules are refused outright. Older scores have no run details. Flags are hints, not proof.</p>
     <div class="list" id="list"></div>
     <button class="btn ghost more hidden" id="more" type="button">Load more</button>
@@ -340,6 +343,17 @@ $('csv').addEventListener('click', async () => {
   } catch (e) { if (e.message !== 'auth') showToast(e.message, false); }
 });
 
+// Full CSV, or with "wallet addresses only" ticked: one unique wallet per line, nothing else.
+function exportCsv(kind, d, lines) {
+  const day = new Date().toISOString().slice(0, 10);
+  if ($('walletsOnly').checked) {
+    const seen = new Set(), wallets = [];
+    d.entries.forEach((e) => { const w = String(e.wallet || '').trim(); if (w && !seen.has(w.toLowerCase())) { seen.add(w.toLowerCase()); wallets.push(w); } });
+    downloadCsv('layer-run-' + kind + '-wallets-' + wallets.length + '-' + day + '.csv', wallets);
+    return;
+  }
+  downloadCsv('layer-run-' + kind + '-' + d.count + '-' + day + '.csv', lines);
+}
 function downloadCsv(name, lines) {
   const blob = new Blob([lines.join('\n') + '\n'], { type: 'text/csv;charset=utf-8' });
   const a = document.createElement('a');
@@ -352,7 +366,7 @@ $('wlcsv').addEventListener('click', async () => {
   try {
     const d = await api('wl');
     const q = (v) => '"' + String(v).replace(/"/g, '""') + '"';
-    downloadCsv('layer-run-whitelist-' + d.count + '-' + new Date().toISOString().slice(0, 10) + '.csv',
+    exportCsv('whitelist', d,
       ['x_username,wallet,joined_at'].concat(d.entries.map((e) => [q(e.username), q(e.wallet), q(e.at)].join(','))));
     showToast('Downloaded ' + fmt(d.count) + ' whitelist entries', false);
   } catch (e) { if (e.message !== 'auth') showToast(e.message, false); }
@@ -362,7 +376,7 @@ $('adcsv').addEventListener('click', async () => {
   try {
     const d = await api('airdrop');
     const q = (v) => '"' + String(v).replace(/"/g, '""') + '"';
-    downloadCsv('layer-run-airdrop-' + d.count + '-' + new Date().toISOString().slice(0, 10) + '.csv',
+    exportCsv('airdrop', d,
       ['x_username,wallet,claimed_at'].concat(d.entries.map((e) => [q(e.username), q(e.wallet), q(e.at)].join(','))));
     showToast('Downloaded ' + fmt(d.count) + ' airdrop wallets', false);
   } catch (e) { if (e.message !== 'auth') showToast(e.message, false); }
@@ -372,7 +386,7 @@ $('gtdcsv').addEventListener('click', async () => {
   try {
     const d = await api('gtd');
     const q = (v) => '"' + String(v ?? '').replace(/"/g, '""') + '"';
-    downloadCsv('layer-run-gtd-' + d.count + '-' + new Date().toISOString().slice(0, 10) + '.csv',
+    exportCsv('gtd', d,
       ['rank,name,score,wallet,verified,saved_at'].concat(d.entries.map((e) => [e.rank || '', q(e.name), e.score ?? '', q(e.wallet), e.verified ? 'yes' : 'no', q(e.at)].join(','))));
     showToast('Downloaded ' + fmt(d.count) + ' GTD wallets', false);
   } catch (e) { if (e.message !== 'auth') showToast(e.message, false); }
