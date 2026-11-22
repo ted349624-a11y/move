@@ -253,7 +253,7 @@ function startScene() {
 const X_HANDLE = 'LayerRun';
 // Paste the whitelist post's ID here (the number at the end of x.com/LayerRun/status/...).
 // Until it is set, the like, repost and reply steps open the @LayerRun profile.
-const X_POST_ID = '2123226270792355926';
+const X_POST_ID = '';
 const PROFILE = `https://x.com/${X_HANDLE}`;
 const POST = X_POST_ID ? `https://x.com/${X_HANDLE}/status/${X_POST_ID}` : PROFILE;
 const postLink = (intent) => (!X_POST_ID ? PROFILE : isTouch ? POST : `https://x.com/intent/${intent}`);
@@ -282,18 +282,12 @@ const TASKS = [
   { id: 'notify', icon: ICONS.bell, title: 'Turn on notifications', text: `Open the @${X_HANDLE} profile and tap the bell so you never miss an update.`, url: PROFILE },
   { id: 'wallet', icon: ICONS.wallet, title: 'Your wallet', text: 'Paste the EVM wallet address (0x…) you want on the whitelist.' },
 ];
-const KEY = 'lr_wl';
+// Bump the key to make everyone start the steps over.
+const KEY = 'lr_wl_v2';
+try { localStorage.removeItem('lr_wl'); } catch {}
 const W = (() => { try { return JSON.parse(store.get(KEY)) || {}; } catch { return {}; } })();
 W.done = Array.isArray(W.done) ? W.done : [];
 W.user = typeof W.user === 'string' ? W.user : '';
-// carry over what the player already did for the game (username, follow, notifications)
-try {
-  const game = JSON.parse(store.get('lr_xtasks') || 'null');
-  if (game && Array.isArray(game.done)) {
-    if (!W.user && game.user) W.user = game.user;
-    ['user', 'follow', 'notify'].forEach((id) => { if (game.done.includes(id) && !W.done.includes(id)) W.done.push(id); });
-  }
-} catch {}
 W.done = W.done.filter((id, i, a) => TASKS.some((t) => t.id === id) && a.indexOf(id) === i);
 if (!W.user) W.done = W.done.filter((id) => id !== 'user');
 const save = () => store.set(KEY, JSON.stringify(W));

@@ -5,6 +5,10 @@
       "destination": "/admin.html"
     },
     {
+      "source": "/whitelist",
+      "destination": "/whitelist.html"
+    },
+    {
       "source": "/airdrop",
       "destination": "/airdrop.html"
     }
@@ -40,18 +44,6 @@
           "value": "no-store"
         }
       ]
-    }
-  ],
-  "redirects": [
-    {
-      "source": "/whitelist",
-      "destination": "/",
-      "permanent": false
-    },
-    {
-      "source": "/whitelist.html",
-      "destination": "/",
-      "permanent": false
     }
   ]
 }
