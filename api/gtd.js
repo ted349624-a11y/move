@@ -62,7 +62,7 @@ export default async function handler(req, res) {
 
     if (rankRaw === null || rankRaw === undefined) return res.status(404).json({ error: 'No score found for this name. Use the exact name from the leaderboard.' });
     const rank = Number(rankRaw) + 1;
-    if (rank > GTD_TOP) return res.status(403).json({ error: `Only the top ${GTD_TOP.toLocaleString('en-US')} get a GTD spot. ${name} is #${rank.toLocaleString('en-US')}.` });
+    if (rank > GTD_TOP) return res.status(403).json({ error: `Only the top ${GTD_TOP.toLocaleString('en-US')} can submit a wallet. ${name} is #${rank.toLocaleString('en-US')}.` });
 
     const keyHash = key ? hash(key) : '';
     let claim = null;
