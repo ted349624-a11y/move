@@ -289,9 +289,9 @@ html.bg #c{pointer-events:none}
 <section id="gtd" class="screen hidden">
   <div class="panel gtd-panel">
     <button class="icon-btn tasks-close" id="btnGtdClose" aria-label="Close"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
-    <div class="kicker">TOP 2,000</div>
+    <div class="kicker">LAYER RUN</div>
     <h2>SUBMIT YOUR WALLET</h2>
-    <p class="gtd-text">Players in the <b>top 2,000</b> on the leaderboard can submit a wallet. Enter the name you play with and your EVM wallet (0x…).</p>
+    <p class="gtd-text">Enter the name you play with and your <b>EVM wallet</b> (0x…).</p>
     <form id="gtdForm" autocomplete="off">
       <input id="gtdName" maxlength="16" placeholder="Your player name" spellcheck="false" autocapitalize="off" aria-label="Player name">
       <input id="gtdWallet" maxlength="42" placeholder="0x… wallet address" spellcheck="false" autocapitalize="off" aria-label="EVM wallet address">
@@ -1306,7 +1306,7 @@ async function submitScore(e) {
     const extra = d.best > S.score ? ` · Your best: ${d.best.toLocaleString('en-US')}` : '';
     if (d.key) gtdKeys.set(name, d.key);
     gtdRank.save(name, d.rank);
-    setStatus(`You are #${d.rank} of ${d.total} players${extra}` + (d.rank <= GTD_TOP ? ' · Top 2,000: submit your wallet' : ''), 'ok');
+    setStatus(`You are #${d.rank} of ${d.total} players${extra}` + (d.rank <= GTD_TOP ? ' · You can submit your wallet' : ''), 'ok');
     $('btnGtd2').classList.toggle('hidden', d.rank > GTD_TOP);
     sfx.zone();
   } catch (err) {
