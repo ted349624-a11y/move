@@ -27,7 +27,7 @@ Herkes adımlara sıfırdan başlar (oyundan adım aktarılmaz). Herkesi yeniden
 
 - Kayıtlar Upstash'te `ntr:wl` (X kullanıcı adı → cüzdan) ve `ntr:wl:wallets` (cüzdan → kullanıcı adı) anahtarlarında. Bir X hesabı ve bir cüzdan yalnızca bir kez kaydolabilir.
 - Oyunda kullanıcı adı, takip ve bildirim adımlarını yapmış olanlar bunları tekrar görmez.
-- Gönderi `whitelist.html` içindeki `X_POST_ID` değeridir (şu an boş: beğeni, repost ve yorum adımları @LayerRun profilini açar). Telefonda gönderinin kendisi, bilgisayarda X'in tek tıklık sayfaları açılır. Değiştiğinde beğeni, repost ve yorum adımları herkes için sıfırlanır.
+- Gönderi `whitelist.html` içindeki `X_POST_ID` değeridir (şu an `2124494750153646133`). Telefonda gönderinin kendisi, bilgisayarda X'in tek tıklık sayfaları açılır. Değiştiğinde beğeni, repost ve yorum adımları herkes için sıfırlanır.
 
 ### $RUN airdrop sayfası
 
