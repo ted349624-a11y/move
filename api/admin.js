@@ -100,7 +100,7 @@ export default async function handler(req, res) {
     if (body.action === 'gtd') {
       const [all, top] = await Promise.all([
         redis.hgetall(KEYS.gtd),
-        redis.zrange(KEYS.board, 0, 1999, { rev: true, withScores: true }),
+        redis.zrange(KEYS.board, 0, 2999, { rev: true, withScores: true }),
       ]);
       const pos = new Map();
       for (let i = 0; i < top.length; i += 2) pos.set(String(top[i]), { rank: i / 2 + 1, score: Number(top[i + 1]) });
